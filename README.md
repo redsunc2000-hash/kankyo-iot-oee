@@ -12,8 +12,12 @@ Built with plain **HTML, CSS and JavaScript**. There is no framework, no build s
 | `manager` | `manager` | View mode (edit), Operation and Admin (view only) |
 | `operator` | `operator` | View and Operation, Air Filter Zone only |
 | `maint.tech` | `maint.tech` | Maintenance technician: View, Operation, Machine Health and Spare Part |
+| `mes.planner` | `mes.planner` | MES only: plans and releases orders, dispatch, material, product and routing |
+| `mes.op` | `mes.op` | MES only: shop floor operator, Air Filter Zone (Water Filter Zone hidden) |
+| `mes.op.w` | `mes.op.w` | MES only: shop floor operator, Water Filter Zone (Air Filter Zone hidden) |
+| `mes.qc` | `mes.qc` | MES only: inspections, NCR, lot hold and release |
 
-After login, choose **Production Monitoring**.
+After login, choose **Production Monitoring** or **MES**. The MES accounts only see the MES application, and the older roles (manager, operator, maint.tech) do not see MES. MES pages are separate menu keys in **Admin › Role** (group *MES mode*).
 
 > These are demo accounts for a mock-up. Passwords live in the client-side code. Do not reuse this login for anything real.
 
@@ -28,6 +32,7 @@ After login, choose **Production Monitoring**.
 - **Energy**: kWh, TOU cost, Wh per piece, energy used while stopped, CO₂, load profile (tariff is editable)
 - **SPC**: X̄-R charts of process sensors, control rules, Cpk against the warning limit
 - **Shift Log**: start-of-shift checklist per machine type and shift handover notes with an automatic shift summary
+- **MES** (own application and MES mode): Production Order (from product routing and BOM, material check before release), Dispatch (finite-capacity schedule with Gantt, change machine or priority), Shop Floor terminal (clock in, skill check, first-piece and final inspection, report output pre-filled from the IoT counter, lot created per report), Material & Lot (receive with supplier lot, reservations, hold, ship), Traceability (backward and forward lot genealogy to customer shipment, recall impact, machine OEE while the lot was made), Quality & NCR (disposition: rework, scrap, use as is, return), Labor (who is on which machine, skill matrix, output per hour), Product & Routing (master data)
 - Live alarms (ticker, toasts, sidebar warning icons), CSV export, print to PDF
 - Neumorphic white/blue theme with dark mode (theme button in the top bar)
 
@@ -76,5 +81,7 @@ You can also use **New → Blueprint**, which reads `render.yaml`.
 | `health.js` | Sensor simulation, health score, prediction, maintenance counters |
 | `maint.js` | Work orders, spare parts, energy, SPC and shift logic |
 | `ops.js` | Work Order, Shift Log, Energy, SPC and Spare Part pages |
+| `mes.js` | MES logic: orders, routing, lots and genealogy, NCR, labor, schedule, seed history |
+| `mes-ui.js` | MES pages |
 | `app.js` | Screens, permissions, forms, tables |
 | `render.yaml` | Render static-site blueprint |

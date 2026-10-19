@@ -145,6 +145,10 @@ const MENU_KEYS = [
     { key: 'plan_production', label: 'Plan Production' }, { key: 'reason', label: 'Reason' }, { key: 'job', label: 'Job' },
     { key: 'alarm_setup', label: 'Alarm' }, { key: 'sensor_setup', label: 'Sensor' }, { key: 'spare_part', label: 'Spare Part' }, { key: 'banner', label: 'Banner' }, { key: 'line_notify', label: 'Line Notify' },
     { key: 'access_log', label: 'Access Log' }] },
+  { group: 'MES mode', mode: 'mes', items: [
+    { key: 'mes_overview', label: 'MES Overview' }, { key: 'mes_order', label: 'Production Order' }, { key: 'mes_dispatch', label: 'Dispatch' },
+    { key: 'mes_terminal', label: 'Shop Floor' }, { key: 'mes_material', label: 'Material & Lot' }, { key: 'mes_trace', label: 'Traceability' },
+    { key: 'mes_quality', label: 'Quality & NCR' }, { key: 'mes_labor', label: 'Labor' }, { key: 'mes_product', label: 'Product & Routing' }] },
 ];
 
 /* ---------- config store ---------- */

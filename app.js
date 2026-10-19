@@ -56,6 +56,8 @@ const ICON = {
   clip: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V2h6v2M9 11l2 2 4-4M9 17h6"/>',
   part: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>',
   wrench: '<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+  factory: '<path d="M3 21V10l6 4v-4l6 4V5h6v16z"/><path d="M7 17h2M12 17h2M17 17h1"/>',
+  trace: '<circle cx="5" cy="6" r="2"/><circle cx="5" cy="18" r="2"/><circle cx="19" cy="12" r="2"/><path d="M7 6h4l4 6M7 18h4l4-6"/>',
 };
 const ic = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n] || ''}</svg>`;
 
@@ -93,8 +95,18 @@ const PAGES = {
   banner: { mode: 'admin', label: 'Banner', icon: 'image' },
   line_notify: { mode: 'admin', label: 'Line Notify', icon: 'msg' },
   access_log: { mode: 'admin', label: 'Access Log', icon: 'log' },
+  mes_overview: { mode: 'mes', label: 'MES Overview', icon: 'factory' },
+  mes_order: { mode: 'mes', label: 'Production Order', icon: 'job' },
+  mes_dispatch: { mode: 'mes', label: 'Dispatch', icon: 'cal' },
+  mes_terminal: { mode: 'mes', label: 'Shop Floor', icon: 'sliders' },
+  mes_material: { mode: 'mes', label: 'Material & Lot', icon: 'box' },
+  mes_trace: { mode: 'mes', label: 'Traceability', icon: 'trace' },
+  mes_quality: { mode: 'mes', label: 'Quality & NCR', icon: 'quality' },
+  mes_labor: { mode: 'mes', label: 'Labor', icon: 'user' },
+  mes_product: { mode: 'mes', label: 'Product & Routing', icon: 'clip' },
 };
-const MODE_LABEL = { view: 'View mode', operation: 'Operation mode', admin: 'Admin mode' };
+const MODE_LABEL = { view: 'View mode', operation: 'Operation mode', admin: 'Admin mode', mes: 'MES mode' };
+const PE_MODES = ['view', 'operation', 'admin'];
 
 /* ---------- state ---------- */
 const now0 = Date.now();
@@ -105,6 +117,7 @@ const S = {
   layoutFull: true, lossType: 'overall', lossBy: 'machine', lossTop: 5,
   opMachine: null, opQty: 1, opMode: 'pq', benchIds: null,
   planAsset: 'p1', planMonth: startOfDay(now0), clip: null, search: {}, hRange: '24h', sensorAsset: '', eRange: 'today', spcRange: '24h', spcMid: null, spcSensor: null, woFilter: 'active',
+  mesOrdF: 'active', mesM: null, mesLot: null, mesHz: '24h', mesKind: 'all', mesUsed: false, mesProd: null,
   theme: (() => { try { return localStorage.getItem('oee-demo-theme') || 'system'; } catch (e) { return 'system'; } })(),
 };
 const app = document.getElementById('app');
@@ -269,7 +282,7 @@ function renderLogin(err) {
       <div class="field"><label for="lg-pass">Password</label><input class="input" id="lg-pass" type="password" autocomplete="current-password" value="${remembered ? '' : 'admin'}"><div class="err" id="lg-pass-err">${err ? esc(err) : ''}</div></div>
       <label class="check"><input type="checkbox" id="lg-rem" ${remembered ? 'checked' : ''}> Remember me</label>
       <button class="btn primary" type="submit" style="padding:12px">Login</button>
-      <p style="margin:0;font-size:12px;color:var(--faint)">Demo accounts: <span class="mono">admin/admin</span> · <span class="mono">manager/manager</span> · <span class="mono">operator/operator</span></p>
+      <p style="margin:0;font-size:12px;color:var(--faint)">Demo accounts: <span class="mono">admin/admin</span> · <span class="mono">manager/manager</span> · <span class="mono">operator/operator</span><br>MES only: <span class="mono">mes.planner</span> · <span class="mono">mes.op</span> · <span class="mono">mes.op.w</span> · <span class="mono">mes.qc</span> (password = username)</p>
     </form></div></main>`;
   document.getElementById('login-form').addEventListener('submit', e => {
     e.preventDefault();
@@ -298,7 +311,8 @@ function renderPicker() {
     <div class="brand" style="justify-content:center"><img class="brand-logo" src="logo-mark.png" alt="" width="40" height="40"><span>Kankyo IoT</span></div>
     <p style="margin:0;color:var(--muted)">Please select application</p>
     <div class="app-pick">
-      <button class="app-tile" data-act="pick" data-arg="pe">${ic('bench')}Production Monitoring</button>
+      <button class="app-tile ${PE_MODES.some(m => pagesOf(m).length) ? '' : 'muted'}" data-act="pick" data-arg="pe">${ic('bench')}Production Monitoring</button>
+      <button class="app-tile ${pagesOf('mes').length ? '' : 'muted'}" data-act="pick" data-arg="mes">${ic('factory')}MES</button>
       <button class="app-tile muted" data-act="pick" data-arg="ai">${ic('loss')}Asset Insight</button>
       <button class="app-tile muted" data-act="pick" data-arg="sc">${ic('sliders')}System Config</button>
     </div></div></main>`;
@@ -312,7 +326,7 @@ function render() {
   applyTheme();
   if (!S.user) return renderLogin();
   if (!S.picked) return renderPicker();
-  if (menuLevel(S.page) === 'deny') { const p = pagesOf(S.mode)[0] || pagesOf('view')[0] || pagesOf('operation')[0] || pagesOf('admin')[0]; S.page = p; S.mode = PAGES[p].mode; }
+  if (menuLevel(S.page) === 'deny') { const p = pagesOf(S.mode)[0] || pagesOf('view')[0] || pagesOf('operation')[0] || pagesOf('admin')[0] || pagesOf('mes')[0]; S.page = p; S.mode = PAGES[p].mode; }
   const scrollTop = document.querySelector('.content')?.scrollTop || 0;
   app.innerHTML = `<div class="shell">
     <aside class="side ${S.sideOpen ? 'open' : ''}" aria-label="Navigation"><div class="side-inner raise">${sideHTML()}</div></aside>
@@ -324,7 +338,7 @@ function render() {
           <span style="flex:1"></span>
           <button data-act="theme" title="Theme: ${S.theme}" aria-label="Switch theme (now ${S.theme})">${ic(S.theme === 'dark' ? 'moon' : S.theme === 'light' ? 'sun' : 'auto')}</button>
         </nav>
-        ${S.mode !== 'admin' ? `<div class="ticker" data-act="go" data-arg="alarm" role="button" tabindex="0" aria-label="Open Alarm page">${tickerHTML()}</div>` : ''}
+        ${S.mode !== 'admin' && S.mode !== 'mes' ? `<div class="ticker" data-act="go" data-arg="alarm" role="button" tabindex="0" aria-label="Open Alarm page">${tickerHTML()}</div>` : ''}
       </div>
       <main class="content" id="content">${pageHTML()}</main>
     </div></div>`;
@@ -353,9 +367,9 @@ function refreshContent() {
 function sideHTML() {
   const u = S.user;
   const initials = u.fullName.split(/\s+/).map(s => s[0]).slice(0, 2).join('').toUpperCase();
-  const modes = ['view', 'operation', 'admin'].filter(m => pagesOf(m).length);
+  const modes = [...PE_MODES, 'mes'].filter(m => pagesOf(m).length);
   const menu = S.menuOpen ? `<div class="menu raise" role="menu">
-      ${modes.map(m => `<button role="menuitem" class="${S.mode === m ? 'on' : ''}" data-act="mode" data-arg="${m}">${ic(m === 'view' ? 'grid' : m === 'operation' ? 'sliders' : 'shield')}${MODE_LABEL[m]}</button>`).join('')}
+      ${modes.map(m => `<button role="menuitem" class="${S.mode === m ? 'on' : ''}" data-act="mode" data-arg="${m}">${ic(m === 'mes' ? 'factory' : m === 'view' ? 'grid' : m === 'operation' ? 'sliders' : 'shield')}${MODE_LABEL[m]}</button>`).join('')}
       <hr><button role="menuitem" data-act="chpass">${ic('key')}Change Password</button>
       <button role="menuitem" data-act="reg-line">${ic('msg')}Register Line Notify</button>
       ${myRole()?.superAdmin ? `<button role="menuitem" data-act="reset-demo">${ic('reset')}Reset demo data</button>` : ''}
@@ -364,7 +378,7 @@ function sideHTML() {
     ? `<nav class="side-admin" aria-label="Admin menu">${pagesOf('admin').map(k => `<button class="${S.page === k ? 'on' : ''}" data-act="go" data-arg="${k}">${ic(PAGES[k].icon)}${PAGES[k].label}</button>`).join('')}</nav>`
     : `<label class="field" style="gap:0"><span class="sr" hidden>Search assets</span><div style="position:relative"><input class="input" id="tree-search" placeholder="Search assets" value="${esc(S.search.tree || '')}" style="padding-right:34px" aria-label="Search assets"><span style="position:absolute;right:10px;top:9px;width:16px;height:16px;color:var(--faint)">${ic('search')}</span></div></label>
        <div class="tree" role="tree">${treeHTML()}</div>`;
-  return `<div class="brand"><img class="brand-logo sm" src="logo-mark.png" alt="" width="30" height="30"><span>Kankyo IoT<small>Production Monitoring</small></span></div>
+  return `<div class="brand"><img class="brand-logo sm" src="logo-mark.png" alt="" width="30" height="30"><span>Kankyo IoT<small>${S.mode === 'mes' ? 'Manufacturing Execution' : 'Production Monitoring'}</small></span></div>
     <div class="profile"><span class="avatar">${esc(initials)}</span>
       <button class="profile-btn" data-act="menu" aria-haspopup="menu" aria-expanded="${S.menuOpen}"><b>${esc(u.fullName)}</b><span>${esc(myRole()?.name || '')} ${ic('down').replace('<svg', '<svg style="width:12px;height:12px"')}</span><div class="mode-chip">${MODE_LABEL[S.mode]}</div></button>${menu}</div>${body}`;
 }
@@ -395,7 +409,7 @@ function tickerHTML() {
 
 /* ---------- page dispatcher ---------- */
 function pageHTML() {
-  const fn = { overview: pOverview, plant_layout: pLayout, availability: pAvail, performance: pPerf, quality: pQuality, benchmark: pBench, job_tracking: pJobTrack, loss: pLoss, alarm: pAlarm, machine_detail: pMachine, machine_health: pHealth, energy: pEnergy, spc: pSpc, daily_report: pDaily, operation_input: pOpInput, work_order: pWorkOrder, shift_log: pShiftLog, availability_history: pAvailHist, performance_history: pPerfHist, quality_history: pQualHist, asset: pAsset, role: pRole, user: pUser, plan_production: pPlan, reason: pReason, job: pJob, alarm_setup: pAlarmSetup, sensor_setup: pSensor, spare_part: pParts, banner: pBanner, line_notify: pLineNotify, access_log: pAccessLog }[S.page];
+  const fn = { overview: pOverview, plant_layout: pLayout, availability: pAvail, performance: pPerf, quality: pQuality, benchmark: pBench, job_tracking: pJobTrack, loss: pLoss, alarm: pAlarm, machine_detail: pMachine, machine_health: pHealth, energy: pEnergy, spc: pSpc, daily_report: pDaily, operation_input: pOpInput, work_order: pWorkOrder, shift_log: pShiftLog, availability_history: pAvailHist, performance_history: pPerfHist, quality_history: pQualHist, asset: pAsset, role: pRole, user: pUser, plan_production: pPlan, reason: pReason, job: pJob, alarm_setup: pAlarmSetup, sensor_setup: pSensor, spare_part: pParts, banner: pBanner, line_notify: pLineNotify, access_log: pAccessLog, ...MES_PAGES }[S.page];
   try { return fn ? fn() : ''; } catch (e) { console.error(e); return `<div class="card">Something went wrong on this page: ${esc(e.message)}</div>`; }
 }
 function head(title, extra = '', sub = '') {
@@ -436,22 +450,39 @@ function pOverview() {
     `<div class="card"><div class="card-head"><h3>OEE History</h3>${Charts.legend(SERIES)}${csvBtn('export', 'oee')}</div>${chart(W => Charts.area(pts, SERIES, { W, H: 260, size }))}</div>`;
 }
 
+// Plant Layout boxes are tinted by severity: a machine by its live state (stop reason severity, or OEE < 60% while
+// running); a group by the worst machine under it, so a problem stays visible when the tree is minimized.
+const SEV_RANK = { idle: 0, good: 1, warn: 2, crit: 3 };
+const SEV_LABEL = { idle: 'Idle', good: 'Running', warn: 'Warning', crit: 'Critical' };
+function machineSeverity(m, c) {
+  const st = Sim.status(m.id);
+  if (st === 'crit' || st === 'warn') return { k: st, why: `Stopped: ${DB.reason(Sim.current(m.id).reasonId)?.name || ''}` };
+  if (st === 'idle') return { k: 'idle', why: 'No data' };
+  return c.OEE != null && c.OEE < 0.6 ? { k: 'warn', why: 'Running, OEE below 60%' } : { k: 'good', why: 'Running' };
+}
 function pLayout() {
   const [f, t] = range();
+  const calcs = new Map(); const cOf = id => { if (!calcs.has(id)) calcs.set(id, calc(id, f, t, S.onlyJob)); return calcs.get(id); };
+  const severity = a => {
+    if (a.isMachine) return machineSeverity(a, cOf(a.id));
+    const all = DB.machinesUnder(a.id).filter(assetVisible).map(m => machineSeverity(m, cOf(m.id)));
+    if (!all.length) return { k: 'idle', why: 'No machines' };
+    const worst = all.reduce((x, y) => SEV_RANK[y.k] > SEV_RANK[x.k] ? y : x).k;
+    const n = all.filter(x => x.k === worst).length;
+    return { k: worst, why: worst === 'good' ? `All ${all.length} machines running` : `${n} of ${all.length} machines ${SEV_LABEL[worst].toLowerCase()}` };
+  };
   const node = a => {
     if (!assetVisible(a)) return '';
-    const c = calc(a.id, f, t, S.onlyJob);
-    const st = a.isMachine ? Sim.status(a.id) : null;
-    const hdColor = a.isMachine ? (st === 'run' ? (c.OEE != null && c.OEE < 0.6 ? '--warn' : '--good') : `--${st}`) : '--accent';
+    const c = cOf(a.id); const sv = severity(a);
     const kids = DB.kids(a.id).filter(assetVisible);
-    return `<div class="lay-row"><button class="lay-node ${S.layoutFull ? '' : 'min'}" data-act="scope" data-arg="${a.id}" title="${esc(DB.path(a.id))}">
-        <div class="hd"><span class="dot" style="background:var(${hdColor})"></span><span class="nm">${esc(a.name)}</span></div>
+    return `<div class="lay-row"><button class="lay-node sv-${sv.k} ${S.layoutFull ? '' : 'min'}" data-act="scope" data-arg="${a.id}" title="${esc(DB.path(a.id))} · ${esc(sv.why)}">
+        <div class="hd"><span class="nm">${esc(a.name)}</span><span class="sv-tag">${SEV_LABEL[sv.k]}</span></div>
         <div class="kv"><span>OEE <b style="color:var(${Charts.levelVar(c.OEE)})">${fmtPct(c.OEE)}</b></span><span>Avail. <b>${fmtPct(c.A)}</b></span><span>Perf. <b>${fmtPct(c.P)}</b></span><span>Quality <b>${fmtPct(c.Q)}</b></span></div>
         <div class="bar"><i style="width:${Math.min(100, (c.OEE || 0) * 100)}%;background:var(${Charts.levelVar(c.OEE)})"></i></div></button>
       ${kids.length ? `<div class="lay-children">${kids.map(node).join('')}</div>` : ''}</div>`;
   };
   return head('Plant Layout', `<div class="seg"><button class="${S.layoutFull ? 'on' : ''}" data-act="layout" data-arg="full">Full</button><button class="${S.layoutFull ? '' : 'on'}" data-act="layout" data-arg="min">Minimize</button></div>`, 'Click a box to focus the layout on that line.') + filters() +
-    `<div class="card"><div class="card-head"><h3>${esc(DB.path(S.assetId))}</h3><div class="legend"><span><i style="background:var(--accent)"></i>Group</span><span><i style="background:var(--good)"></i>Running</span><span><i style="background:var(--warn)"></i>Warning / OEE &lt; 60%</span><span><i style="background:var(--crit)"></i>Critical</span></div></div><div class="layout-canvas">${node(scope())}</div></div>`;
+    `<div class="card"><div class="card-head"><h3>${esc(DB.path(S.assetId))}</h3><div class="legend"><span><i style="background:var(--good)"></i>Running</span><span><i style="background:var(--warn)"></i>Warning / OEE &lt; 60%</span><span><i style="background:var(--crit)"></i>Critical</span><span><i style="background:var(--idle)"></i>Idle</span><span class="hint">Groups show their worst machine</span></div></div><div class="layout-canvas">${node(scope())}</div></div>`;
 }
 
 function reasonBars(map, status) {
@@ -1459,8 +1490,14 @@ function registerLine(step = 1) {
    ========================================================================== */
 const ACT = {
   ...OPS_ACT,
+  ...MES_ACT,
   noop() { },
-  pick(el) { if (el.dataset.arg !== 'pe') return toast('Asset Insight and System Config are not part of this demo.', 'warn'); S.picked = true; S.assetId = firstScope(); S.mode = pagesOf('view').length ? 'view' : pagesOf('operation').length ? 'operation' : 'admin'; S.page = pagesOf(S.mode)[0]; render(); },
+  pick(el) {
+    const a = el.dataset.arg; if (a !== 'pe' && a !== 'mes') return toast('Asset Insight and System Config are not part of this demo.', 'warn');
+    const mode = a === 'mes' ? (pagesOf('mes').length ? 'mes' : null) : PE_MODES.find(m => pagesOf(m).length);
+    if (!mode) return toast('Your role has no access to this application.', 'warn');
+    S.picked = true; S.assetId = firstScope(); S.mode = mode; S.page = pagesOf(S.mode)[0]; render();
+  },
   go(el) { const p = el.dataset.arg; if (menuLevel(p) === 'deny') return toast('You do not have access to that page.', 'warn'); S.page = p; S.mode = PAGES[p].mode; S.sideOpen = false; S.menuOpen = false; render(); },
   side() { S.sideOpen = !S.sideOpen; document.querySelector('.side')?.classList.toggle('open', S.sideOpen); },
   menu() { S.menuOpen = !S.menuOpen; render(); },
@@ -1576,6 +1613,7 @@ document.addEventListener('keydown', e => {
 });
 document.addEventListener('change', e => {
   const t = e.target;
+  if (MES_CHANGE(t)) return;
   if (t.id === 'f-onlyjob') { S.onlyJob = t.checked; refreshContent(); }
   else if (t.id === 'f-refresh') { S.refresh = +t.value; setupRefresh(); t.blur(); }
   else if (t.id === 'f-from' || t.id === 'f-to') { const v = new Date(t.value).getTime(); if (isFinite(v)) { S[t.id === 'f-from' ? 'from' : 'to'] = v; t.blur(); refreshContent(); } }
@@ -1626,5 +1664,6 @@ setInterval(() => {
 DB.load();
 Sim.init();
 Health.init();
+Mes.init();
 setupRefresh();
 render();
