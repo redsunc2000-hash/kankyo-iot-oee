@@ -371,6 +371,7 @@ td a:hover, .link:hover { text-decoration: underline; }
 .lay-node.min .kv { display: none; }
 .lay-node .bar { height: 4px; border-radius: 4px; margin-top: 8px; box-shadow: var(--inset-sm); overflow: hidden; }
 .lay-node .bar i { display: block; height: 100%; }
+.lay-zones { display: flex; flex-wrap: wrap; gap: 28px 56px; align-items: flex-start; }
 .lay-children { display: flex; flex-direction: column; gap: 14px; padding-left: 26px; border-left: 2px solid var(--line); margin-left: 8px; }
 
 .bench { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; }

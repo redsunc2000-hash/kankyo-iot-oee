@@ -472,18 +472,21 @@ function pLayout() {
     const n = all.filter(x => x.k === worst).length;
     return { k: worst, why: worst === 'good' ? `All ${all.length} machines running` : `${n} of ${all.length} machines ${SEV_LABEL[worst].toLowerCase()}` };
   };
-  const node = a => {
+  // Only two levels are drawn: each zone (a child of the plant) with its machines listed straight under it.
+  const sc = scope(); const chain = DB.ancestors(sc.id).reverse();
+  const zones = chain.length > 1 ? [chain[1]] : DB.kids(sc.id).filter(a => !a.isMachine);
+  const node = (a, kids = []) => {
     if (!assetVisible(a)) return '';
     const c = cOf(a.id); const sv = severity(a);
-    const kids = DB.kids(a.id).filter(assetVisible);
     return `<div class="lay-row"><button class="lay-node sv-${sv.k} ${S.layoutFull ? '' : 'min'}" data-act="scope" data-arg="${a.id}" title="${esc(DB.path(a.id))} · ${esc(sv.why)}">
         <div class="hd"><span class="nm">${esc(a.name)}</span><span class="sv-tag">${SEV_LABEL[sv.k]}</span></div>
         <div class="kv"><span>OEE <b style="color:var(${Charts.levelVar(c.OEE)})">${fmtPct(c.OEE)}</b></span><span>Avail. <b>${fmtPct(c.A)}</b></span><span>Perf. <b>${fmtPct(c.P)}</b></span><span>Quality <b>${fmtPct(c.Q)}</b></span></div>
         <div class="bar"><i style="width:${Math.min(100, (c.OEE || 0) * 100)}%;background:var(${Charts.levelVar(c.OEE)})"></i></div></button>
-      ${kids.length ? `<div class="lay-children">${kids.map(node).join('')}</div>` : ''}</div>`;
+      ${kids.length ? `<div class="lay-children">${kids.map(m => node(m)).join('')}</div>` : ''}</div>`;
   };
-  return head('Plant Layout', `<div class="seg"><button class="${S.layoutFull ? 'on' : ''}" data-act="layout" data-arg="full">Full</button><button class="${S.layoutFull ? '' : 'on'}" data-act="layout" data-arg="min">Minimize</button></div>`, 'Click a box to focus the layout on that line.') + filters() +
-    `<div class="card"><div class="card-head"><h3>${esc(DB.path(S.assetId))}</h3><div class="legend"><span><i style="background:var(--good)"></i>Running</span><span><i style="background:var(--warn)"></i>Warning / OEE &lt; 60%</span><span><i style="background:var(--crit)"></i>Critical</span><span><i style="background:var(--idle)"></i>Idle</span><span class="hint">Groups show their worst machine</span></div></div><div class="layout-canvas">${node(scope())}</div></div>`;
+  const zoneNode = z => node(z, DB.machinesUnder(chain.length > 1 ? sc.id : z.id).filter(assetVisible));
+  return head('Plant Layout', `<div class="seg"><button class="${S.layoutFull ? 'on' : ''}" data-act="layout" data-arg="full">Full</button><button class="${S.layoutFull ? '' : 'on'}" data-act="layout" data-arg="min">Minimize</button></div>`, 'Click a zone or machine to focus the layout on it.') + filters() +
+    `<div class="card"><div class="card-head"><h3>${esc(DB.path(S.assetId))}</h3><div class="legend"><span><i style="background:var(--good)"></i>Running</span><span><i style="background:var(--warn)"></i>Warning / OEE &lt; 60%</span><span><i style="background:var(--crit)"></i>Critical</span><span><i style="background:var(--idle)"></i>Idle</span><span class="hint">Zones show their worst machine</span></div></div><div class="layout-canvas"><div class="lay-zones">${zones.map(zoneNode).join('') || node(sc)}</div></div></div>`;
 }
 
 function reasonBars(map, status) {
