@@ -93,7 +93,7 @@ const Charts = {
     items.forEach((it, i) => {
       const cx = L + gap * i + gap / 2, gh = it.good / max * h, bh = it.bad / max * h;
       const lbl = it.label.length > 14 ? it.label.slice(0, 13) + '…' : it.label;
-      const tip = `${it.label}\nGood: ${fmtNum(it.good)}\nBad: ${fmtNum(it.bad)}`;
+      const tip = `${it.label}\nGood: ${fmtNum(it.good)}\nNG: ${fmtNum(it.bad)}`;
       g += `<g><title>${esc(tip)}</title><rect x="${cx - bw / 2}" y="${T + h - gh}" width="${bw}" height="${gh}" style="fill:var(--good);opacity:.85"/>
         <rect x="${cx - bw / 2}" y="${T + h - gh - bh}" width="${bw}" height="${bh}" rx="5" style="fill:var(--crit);opacity:.85"/></g>
         <text class="lbl" x="${cx}" y="${H - 12}" text-anchor="middle">${esc(lbl)}</text>`;

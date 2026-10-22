@@ -24,7 +24,7 @@ After login, choose **Production Monitoring** or **MES**. The MES accounts only 
 ## Features
 
 - **View mode**: Overview, Plant Layout, Availability, Performance, Quality, Benchmark, Job Tracking, Loss, Alarm, Machine Detail, Machine Health, Energy, SPC, Daily Report
-- **Operation mode**: Work Order and Shift Log, turn machines on/off with a reason, count good/bad parts, edit availability/performance/quality history
+- **Operation mode**: Work Order and Shift Log, turn machines on/off with a reason, count Good/NG parts, edit availability/performance/quality history
 - **Admin mode**: Asset (with CSV import), Role (menu + asset permissions), User, Plan Production (weekly shift + daily override), Reason, Job, Alarm rules, Sensor (limits + maintenance plan), Spare Part, Banner, Line Notify, Access Log
 - **Machine Health**: sensors chosen per machine type (vibration, motor/oil/barrel/mold/oven temperature, current, hydraulic and air pressure, web tension, ultrasonic frequency, pressure decay, power) plus room temperature, humidity and PM2.5 per line; health score, sensor alarms, time-to-limit prediction, PM and tool-wear counters, energy per piece, maintenance log
 - **Work Order (CMMS)**: create from an alarm, Machine Health or a failed checklist item; assign, start, complete with parts used; MTBF and MTTR per machine

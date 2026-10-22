@@ -193,7 +193,7 @@ function pMesTerminal() {
       <div style="display:grid;gap:2px">${kvrow('Order', `${moLink(o)} ${prioPill(o.priority)}`)}${kvrow('Product', `${esc(p.code)} · ${esc(p.name)}`)}${kvrow('Operation', `<b>${op.seq} ${esc(op.name)}</b> ${opPill(op.status)}`)}
         ${kvrow('Output', `<b class="mono">${fmtNum(op.good)}</b> good · <span class="mono">${fmtNum(op.scrap)}</span> scrap · of ${fmtNum(o.qty)} ${esc(p.unit)}`)}${kvrow('Progress', pctBar(o.qty ? op.good / o.qty : 0))}
         ${k ? kvrow('Input waiting', `<span class="mono">${fmtNum(inp)}</span> pcs from op ${o.ops[k - 1].seq}`) : ''}
-        ${kvrow('Machine counter', `<span class="mono">${fmtNum(iot.total)}</span> pcs, <span class="mono">${fmtNum(iot.bad)}</span> bad since ${fmtTime(lastRep, false)} <span class="hint">(from the IoT counter)</span>`)}
+        ${kvrow('Machine counter', `<span class="mono">${fmtNum(iot.total)}</span> pcs, <span class="mono">${fmtNum(iot.bad)}</span> NG since ${fmtTime(lastRep, false)} <span class="hint">(from the IoT counter)</span>`)}
         ${op.inspect ? kvrow(`${INSP_TYPE[op.inspect]} inspection`, (op.inspect === 'first' ? op.firstOk : op.finalOk) ? pill('good', 'Passed') : pill('warn', 'Required')) : ''}</div>
       <div style="display:grid;gap:10px;align-content:start"><div class="well" style="padding:12px 14px;font-size:13px"><b style="display:block;margin-bottom:4px">${ic('clip').replace('<svg', '<svg style="width:14px;height:14px;vertical-align:-2px"')} Work instruction</b>${esc(op.instruction || 'No instruction for this operation.')}
         ${op.checks.length ? `<ul style="margin:8px 0 0;padding-left:18px;color:var(--muted)">${op.checks.map(c => `<li>${esc(c.name)}: ${esc(c.spec)}</li>`).join('')}</ul>` : ''}</div>
@@ -351,7 +351,7 @@ function pMesTrace() {
     const c = finish(calcMachine(DB.asset(rep.mid), from, to, false));
     perf = `<div class="card"><div class="card-head"><h3>Machine while this lot was made <span class="hint">${mName(rep.mid)} · ${fmtTime(from, false)}–${fmtTime(to, false)}</span></h3></div>
       <div class="grid g4" style="gap:12px">${[['OEE', c.OEE], ['Availability', c.A], ['Performance', c.P], ['Quality', c.Q]].map(([t, v]) => `<div class="well" style="padding:10px 12px"><div style="font-size:12px;color:var(--muted)">${t}</div><b class="mono" style="font-size:20px;color:var(${Charts.levelVar(v)})">${fmtPct(v)}</b></div>`).join('')}</div>
-      <p style="margin:10px 0 0;font-size:12.5px;color:var(--muted)">Reported by ${esc(userName(rep.by))} at ${fmtDT(rep.at)}: ${fmtNum(rep.good)} good, ${fmtNum(rep.scrap)} scrap. Machine counter for the same window: ${fmtNum(c.total)} pcs, ${fmtNum(c.bad)} bad.</p></div>`;
+      <p style="margin:10px 0 0;font-size:12.5px;color:var(--muted)">Reported by ${esc(userName(rep.by))} at ${fmtDT(rep.at)}: ${fmtNum(rep.good)} good, ${fmtNum(rep.scrap)} scrap. Machine counter for the same window: ${fmtNum(c.total)} pcs, ${fmtNum(c.bad)} NG.</p></div>`;
   }
   const impact = l.kind !== 'fg' ? Mes.impact(l.id) : [];
   const impShips = impact.flatMap(f => Mes.c.ships.filter(s => s.lotId === f.id).map(s => ({ ...s, lot: f })));

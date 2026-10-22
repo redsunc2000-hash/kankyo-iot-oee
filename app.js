@@ -252,7 +252,8 @@ function table(id, cols, rows, { pageSize = 10, select = false, empty = 'No reco
 }
 const pill = (kind, text) => `<span class="pill ${kind}">${esc(text)}</span>`;
 const statusPill = st => ({ run: pill('good', 'On'), warn: pill('warn', 'Warning'), crit: pill('crit', 'Critical'), idle: pill('idle', 'Off') }[st]);
-const sevPill = s => pill(s === 'critical' ? 'crit' : s === 'bad' ? 'crit' : 'warn', s[0].toUpperCase() + s.slice(1));
+const sevLabel = s => s === 'bad' ? 'NG' : s[0].toUpperCase() + s.slice(1);
+const sevPill = s => pill(s === 'critical' ? 'crit' : s === 'bad' ? 'crit' : 'warn', sevLabel(s));
 const audit = r => [r.createdBy || '', fmtDT(r.createdAt), r.updatedBy || '', fmtDT(r.updatedAt)];
 const auditCols = [{ h: 'Created By', f: r => esc(r.createdBy || '') }, { h: 'Created Date', f: r => `<span class="mono">${fmtDT(r.createdAt)}</span>` }, { h: 'Updated By', f: r => esc(r.updatedBy || '') }, { h: 'Updated Date', f: r => `<span class="mono">${fmtDT(r.updatedAt)}</span>` }];
 function stamp(obj, isNew) { const t = Date.now(); if (isNew) { obj.createdBy = S.user.username; obj.createdAt = t; } obj.updatedBy = S.user.username; obj.updatedAt = t; return obj; }
@@ -562,17 +563,17 @@ function pQuality() {
   const br = badByReason(S.assetId, f, t);
   const reasons = DB.reasons('quality').map(r => ({ label: r.name, value: br[r.id] || 0, color: '--crit' }));
   EXPORTS.qh = () => exportCSV('Quality_History', ['Datetime', 'Quality %'], pts.map(p => [fmtDT(p.t), p.Q == null ? '' : (p.Q * 100).toFixed(2)]));
-  EXPORTS.qm = () => exportCSV('Quality_by_Machine', ['Machine', 'Good', 'Bad', 'Quality %'], c.machines.map(m => [m.name, Math.round(m.good), Math.round(m.bad), m.Q == null ? '' : (m.Q * 100).toFixed(2)]));
-  EXPORTS.qr = () => exportCSV('Bad_Quality_by_Reason', ['Reason', 'Bad quantity'], reasons.map(r => [r.label, Math.round(r.value)]));
+  EXPORTS.qm = () => exportCSV('Quality_by_Machine', ['Machine', 'Good', 'NG', 'Quality %'], c.machines.map(m => [m.name, Math.round(m.good), Math.round(m.bad), m.Q == null ? '' : (m.Q * 100).toFixed(2)]));
+  EXPORTS.qr = () => exportCSV('NG_by_Reason', ['Reason', 'NG quantity'], reasons.map(r => [r.label, Math.round(r.value)]));
   return head('Quality Dashboard') + filters() +
-    `<div class="grid g-1-2" style="margin-bottom:20px">${gaugeCard('Quality', c.Q, `Bad rate <b>${c.total ? (c.bad / c.total * 100).toFixed(1) : '0.0'}%</b>`)}
+    `<div class="grid g-1-2" style="margin-bottom:20px">${gaugeCard('Quality', c.Q, `NG rate <b>${c.total ? (c.bad / c.total * 100).toFixed(1) : '0.0'}%</b>`)}
       <div class="card"><div class="card-head"><h3>Quality History</h3>${csvBtn('export', 'qh')}</div>${chart(W => Charts.area(pts, [{ key: 'Q', label: 'Quality', color: '--s-q' }], { W, H: 220, size }))}</div></div>
     <div class="grid g3" style="margin-bottom:20px">
       <div class="card kpi"><span class="ico" style="color:var(--accent)">${ic('report')}</span><div><label>Total</label><b>${fmtNum(c.total, 2)}</b></div></div>
       <div class="card kpi"><span class="ico" style="color:var(--good)">${ic('check')}</span><div><label>Good</label><b>${fmtNum(c.good, 2)}</b></div></div>
-      <div class="card kpi"><span class="ico" style="color:var(--crit)">${ic('x')}</span><div><label>Bad</label><b>${fmtNum(c.bad, 2)}</b></div></div></div>
-    <div class="grid g2"><div class="card"><div class="card-head"><h3>Quality by Machine</h3><div class="legend"><span><i style="background:var(--good)"></i>Good</span><span><i style="background:var(--crit)"></i>Bad</span></div>${csvBtn('export', 'qm')}</div>${chart(W => Charts.stacked(byM, { W }))}</div>
-      <div class="card"><div class="card-head"><h3>Bad Quality by Reason</h3>${csvBtn('export', 'qr')}</div>${chart(W => Charts.bars(reasons, { W }))}</div></div>`;
+      <div class="card kpi"><span class="ico" style="color:var(--crit)">${ic('x')}</span><div><label>NG</label><b>${fmtNum(c.bad, 2)}</b></div></div></div>
+    <div class="grid g2"><div class="card"><div class="card-head"><h3>Quality by Machine</h3><div class="legend"><span><i style="background:var(--good)"></i>Good</span><span><i style="background:var(--crit)"></i>NG</span></div>${csvBtn('export', 'qm')}</div>${chart(W => Charts.stacked(byM, { W }))}</div>
+      <div class="card"><div class="card-head"><h3>NG by Reason</h3>${csvBtn('export', 'qr')}</div>${chart(W => Charts.bars(reasons, { W }))}</div></div>`;
 }
 
 function pBench() {
@@ -595,7 +596,7 @@ function pBench() {
         <dt style="color:var(--s-p)"><span>Performance</span><span>${fmtPct(c.P)}</span></dt>
         <dd>Target <b>${fmtNum(c.target)}</b></dd><dd>Actual <b>${fmtNum(c.total)}</b></dd><dd>Runtime <b>${fmtNum(c.run / 60)} min</b></dd>
         <dt style="color:var(--s-q)"><span>Quality</span><span>${fmtPct(c.Q)}</span></dt>
-        <dd>Total Parts <b>${fmtNum(c.total)}</b></dd><dd>Good Parts <b>${fmtNum(c.good)}</b></dd><dd>Bad Parts <b>${fmtNum(c.bad)}</b></dd></dl></div>`;
+        <dd>Total Parts <b>${fmtNum(c.total)}</b></dd><dd>Good Parts <b>${fmtNum(c.good)}</b></dd><dd>NG Parts <b>${fmtNum(c.bad)}</b></dd></dl></div>`;
   }).join('');
   return head('Benchmark Compare', `<button class="btn" data-act="bench-add" ${S.benchIds.length >= 8 ? 'disabled' : ''}>${ic('plus')}Add asset</button>`) + filters() + `<div class="bench">${cards}</div>`;
 }
@@ -635,7 +636,7 @@ function pLoss() {
     rate = rate / u.mids.length || 1;
     let reasons = [];
     if (S.lossType !== 'quality' && S.lossType !== 'performance') reasons = reasons.concat(Object.entries(dr).map(([k, v]) => ({ name: DB.reason(k)?.name || 'Stopped', sec: v.sec, n: v.count, col: DB.reason(k)?.status === 'critical' ? '--crit' : '--warn' })));
-    if (S.lossType === 'quality' || S.lossType === 'overall') reasons = reasons.concat(Object.entries(bq).map(([k, v]) => ({ name: DB.reason(k)?.name || 'Bad', sec: v / rate, n: Math.round(v), col: '--s-q', unit: 'pcs' })));
+    if (S.lossType === 'quality' || S.lossType === 'overall') reasons = reasons.concat(Object.entries(bq).map(([k, v]) => ({ name: DB.reason(k)?.name || 'NG', sec: v / rate, n: Math.round(v), col: '--s-q', unit: 'pcs' })));
     if (S.lossType === 'performance') reasons = [{ name: 'Speed loss (slow cycles, minor stops)', sec: u.pLoss, n: null, col: '--s-p' }];
     reasons.sort((a, b) => b.sec - a.sec);
     const hp = history(u.mids.length === 1 ? u.mids[0] : DB.asset(u.mids[0]).parentId, f, t, S.onlyJob).map(p => p.OEE == null ? null : 1 - p.OEE);
@@ -680,12 +681,12 @@ function pMachine() {
   const pts = history(S.assetId, f, t, S.onlyJob); const size = bucketSize(f, t);
   const tl = timeline(S.assetId, f, t); const dr = downByReason(S.assetId, f, t); const br = badByReason(S.assetId, f, t);
   const ar = Object.entries(dr).map(([k, v]) => ({ label: DB.reason(k)?.name || 'Stopped', value: v.sec / 60, color: DB.reason(k)?.status === 'critical' ? '--crit' : '--warn' })).sort((a, b) => b.value - a.value).slice(0, 6);
-  const qr = Object.entries(br).map(([k, v]) => ({ label: DB.reason(k)?.name || 'Bad', value: v, color: '--crit' })).sort((a, b) => b.value - a.value).slice(0, 6);
+  const qr = Object.entries(br).map(([k, v]) => ({ label: DB.reason(k)?.name || 'NG', value: v, color: '--crit' })).sort((a, b) => b.value - a.value).slice(0, 6);
   const mrows = c.machines.map(m => ({ ...m, st: Sim.status(m.id) }));
   EXPORTS.mo = () => exportCSV('Overall_OEE_History', ['Datetime', 'OEE %', 'A %', 'P %', 'Q %'], pts.map(p => [fmtDT(p.t), ...['OEE', 'A', 'P', 'Q'].map(k => p[k] == null ? '' : (p[k] * 100).toFixed(2))]));
   EXPORTS.mt = () => exportCSV('Availability_Timeline', ['Machine', 'State', 'Reason', 'Start', 'End'], tl.flatMap(r => r.segs.map(s => [r.label, s.state, s.reason, fmtDT(s.s), fmtDT(s.e)])));
   EXPORTS.mar = () => exportCSV('Availability_Top_Reason', ['Reason', 'Minutes'], ar.map(r => [r.label, r.value.toFixed(1)]));
-  EXPORTS.mqr = () => exportCSV('Quality_Top_Reason', ['Reason', 'Bad quantity'], qr.map(r => [r.label, Math.round(r.value)]));
+  EXPORTS.mqr = () => exportCSV('Quality_Top_Reason', ['Reason', 'NG quantity'], qr.map(r => [r.label, Math.round(r.value)]));
   return head('Machine Detail') + filters() +
     `<div class="card" style="margin-bottom:20px"><div class="card-head"><h3>Machine Information</h3></div>${table('mach-info', [
       { h: 'Machine Name', f: m => `<button class="link" data-act="scope" data-arg="${m.id}">${esc(m.name)}</button>` }, { h: 'Status', f: m => statusPill(m.st) },
@@ -809,12 +810,12 @@ function openReport(d, kind) {
   const f = d, t = Math.min(d + DAY, Date.now()); const c = calc(S.assetId, f, t, false);
   const dr = downByReason(S.assetId, f, t);
   const top = Object.entries(dr).sort((a, b) => b[1].sec - a[1].sec).slice(0, 5);
-  const mt = `<table><thead><tr><th>Machine</th><th class="num">OEE</th><th class="num">A</th><th class="num">P</th><th class="num">Q</th><th class="num">Actual</th><th class="num">Bad</th></tr></thead><tbody>${c.machines.map(m => `<tr><td>${esc(m.name)}</td><td class="num">${fmtPct(m.OEE)}</td><td class="num">${fmtPct(m.A)}</td><td class="num">${fmtPct(m.P)}</td><td class="num">${fmtPct(m.Q)}</td><td class="num">${fmtNum(m.total)}</td><td class="num">${fmtNum(m.bad)}</td></tr>`).join('')}</tbody></table>`;
+  const mt = `<table><thead><tr><th>Machine</th><th class="num">OEE</th><th class="num">A</th><th class="num">P</th><th class="num">Q</th><th class="num">Actual</th><th class="num">NG</th></tr></thead><tbody>${c.machines.map(m => `<tr><td>${esc(m.name)}</td><td class="num">${fmtPct(m.OEE)}</td><td class="num">${fmtPct(m.A)}</td><td class="num">${fmtPct(m.P)}</td><td class="num">${fmtPct(m.Q)}</td><td class="num">${fmtNum(m.total)}</td><td class="num">${fmtNum(m.bad)}</td></tr>`).join('')}</tbody></table>`;
   openModal({
     title: `${kind === 'one' ? 'One Page Report' : 'Daily Report'} · ${fmtDate(d)}`, wide: true,
     body: `<div class="inline" style="justify-content:space-between"><div><b>${esc(scope().name)}</b><div style="color:var(--muted);font-size:12.5px">${fmtDT(f)} – ${fmtDT(t)}</div></div><div class="inline">${['OEE', 'A', 'P', 'Q'].map(k => `<span class="pill ${c[k] >= .85 ? 'good' : c[k] >= .6 ? 'warn' : 'crit'}">${k} ${fmtPct(c[k])}</span>`).join('')}</div></div>
       <div class="counter-row"><div class="counter"><label>Planned</label><b>${hrs(c.planned)}</b></div><div class="counter"><label>Run</label><b>${hrs(c.run)}</b></div><div class="counter"><label>Down</label><b>${hrs(c.down)}</b></div></div>
-      <div class="counter-row"><div class="counter"><label>Target</label><b>${fmtNum(c.target)}</b></div><div class="counter"><label>Actual</label><b>${fmtNum(c.total)}</b></div><div class="counter"><label>Bad</label><b>${fmtNum(c.bad)}</b></div></div>
+      <div class="counter-row"><div class="counter"><label>Target</label><b>${fmtNum(c.target)}</b></div><div class="counter"><label>Actual</label><b>${fmtNum(c.total)}</b></div><div class="counter"><label>NG</label><b>${fmtNum(c.bad)}</b></div></div>
       ${kind === 'one' ? '' : `<div><h3 style="font-size:14px;margin-bottom:8px">By machine</h3><div class="table-wrap">${mt}</div></div>`}
       <div><h3 style="font-size:14px;margin-bottom:8px">Top downtime reasons</h3><ul style="margin:0;padding-left:18px">${top.map(([k, v]) => `<li>${esc(DB.reason(k)?.name || 'Stopped')}: <span class="mono">${hrs(v.sec)}</span> (${v.count} times)</li>`).join('') || '<li>No downtime.</li>'}</ul></div>`,
     foot: `<button class="btn" data-act="modal-close" type="button">Close</button><button class="btn primary" data-act="print" type="button">${ic('print')}Print PDF</button>`,
@@ -847,20 +848,20 @@ function pOpInput() {
         <div class="state-big"><span style="font-size:12px;color:var(--muted)">OFF</span>
           <button class="switch big" role="switch" aria-checked="${cur.on}" aria-label="Machine power" data-act="op-toggle" ${editable ? '' : 'disabled'}></button><span style="font-size:12px;color:var(--muted)">ON</span>
           <div class="state-text"><b style="color:var(--${st === 'run' ? 'good' : st})">${cur.on ? 'Running' : esc(DB.reason(cur.reasonId)?.name || 'Stopped')}</b><span>since ${fmtDT(cur.s)} · by ${esc(cur.by)}${!cur.on && !cur.manual ? ' · auto-resume when cleared' : ''}</span></div></div>
-        <div class="counter-row"><div class="counter"><label>Actual today</label><b>${fmtNum(c.total)}</b></div><div class="counter"><label>Good</label><b style="color:var(--good)">${fmtNum(c.good)}</b></div><div class="counter"><label>Bad</label><b style="color:var(--crit)">${fmtNum(c.bad)}</b></div></div></div>
+        <div class="counter-row"><div class="counter"><label>Actual today</label><b>${fmtNum(c.total)}</b></div><div class="counter"><label>Good</label><b style="color:var(--good)">${fmtNum(c.good)}</b></div><div class="counter"><label>NG</label><b style="color:var(--crit)">${fmtNum(c.bad)}</b></div></div></div>
       <div class="card op-panel"><div class="card-head" style="margin:0"><h3>Count production</h3><span class="hint">OEE today <b style="color:var(${Charts.levelVar(c.OEE)})">${fmtPct(c.OEE)}</b></span></div>
         <div class="inline" style="justify-content:space-between"><span style="font-size:12.5px;color:var(--muted)">Quantity</span>
           <div class="qty"><button class="btn icon" data-act="qty" data-arg="-1" aria-label="Decrease">−</button><input class="input" id="op-qty" type="number" min="1" value="${S.opQty}" aria-label="Quantity"><button class="btn icon" data-act="qty" data-arg="1" aria-label="Increase">+</button></div></div>
         <div class="radio-group" role="radiogroup" aria-label="Counting mode">${[['p', 'Performance'], ['pq', 'Performance + Quality'], ['q', 'Quality']].map(([v, l]) => `<label><input type="radio" name="op-mode" value="${v}" ${S.opMode === v ? 'checked' : ''}>${l}</label>`).join('')}</div>
-        <div class="gb"><button class="btn good" data-act="op-good" ${editable ? '' : 'disabled'}>${S.opMode === 'p' ? 'Add count' : 'Good'}</button>${S.opMode === 'p' ? '' : `<button class="btn danger" data-act="op-bad" ${editable ? '' : 'disabled'}>Bad</button>`}</div>
-        <p style="margin:0;font-size:12px;color:var(--faint)">${S.opMode === 'p' ? 'Adds pieces to Actual (Performance).' : S.opMode === 'pq' ? 'Adds pieces to Actual and records them as good or bad.' : 'Inspects pieces already counted: records good or bad only.'}</p></div></div>
+        <div class="gb"><button class="btn good" data-act="op-good" ${editable ? '' : 'disabled'}>${S.opMode === 'p' ? 'Add count' : 'Good'}</button>${S.opMode === 'p' ? '' : `<button class="btn danger" data-act="op-bad" ${editable ? '' : 'disabled'}>NG</button>`}</div>
+        <p style="margin:0;font-size:12px;color:var(--faint)">${S.opMode === 'p' ? 'Adds pieces to Actual (Performance).' : S.opMode === 'pq' ? 'Adds pieces to Actual and records them as Good or NG.' : 'Inspects pieces already counted: records Good or NG only.'}</p></div></div>
     <div class="card"><div class="card-head"><h3>Machine Job List</h3></div>${table('op-jobs', [
       { h: 'Job Name', f: r => `${esc(r.j.name)} ${pill('accent', r.j.type === 'auto' ? 'Auto' : 'Manual')}` }, { h: 'Job Date', f: r => `<span class="mono">${fmtDT(r.j.start)} – ${fmtTime(r.j.end, false)}</span>` },
       { h: 'Action', f: r => r.state }, { h: 'Actual', cls: 'num', f: r => `${fmtNum(r.r.total)} <span style="color:var(--muted)">(${(r.r.total / r.j.target * 100).toFixed(1)}%)</span>` },
-      { h: 'Target', cls: 'num', f: r => fmtNum(r.j.target) }, { h: 'Good', cls: 'num', f: r => fmtNum(r.r.good) }, { h: 'Bad', cls: 'num', f: r => fmtNum(r.r.bad) }], jobRowsOp, { pageSize: 5 })}</div>`;
+      { h: 'Target', cls: 'num', f: r => fmtNum(r.j.target) }, { h: 'Good', cls: 'num', f: r => fmtNum(r.r.good) }, { h: 'NG', cls: 'num', f: r => fmtNum(r.r.bad) }], jobRowsOp, { pageSize: 5 })}</div>`;
 }
 function reasonPicker(section, title, onPick, allowNone) {
-  const groups = section === 'availability' ? [['warning', 'Warning', 'warn'], ['critical', 'Critical', 'crit']] : [['bad', 'Bad reason', 'crit']];
+  const groups = section === 'availability' ? [['warning', 'Warning', 'warn'], ['critical', 'Critical', 'crit']] : [['bad', 'NG reason', 'crit']];
   openModal({
     title, body: `<div class="reason-grid">${groups.map(([s, l, k]) => `<div><h4 style="color:var(--${k})">${l}</h4><div class="opts">${DB.cfg.reasons.filter(r => r.section === section && r.status === s).map(r => `<button type="button" class="btn" data-act="pick-reason" data-arg="${r.id}">${esc(r.name)}</button>`).join('')}</div></div>`).join('')}
       ${allowNone ? `<div><button type="button" class="btn" data-act="pick-reason" data-arg="">No reason</button></div>` : ''}</div>`,
@@ -875,10 +876,10 @@ function opCount(kind) {
     if (S.opMode !== 'q') Sim.manualPerf.push({ id: uid('mp'), mid, at, qty, by });
     if (S.opMode !== 'p') Sim.manualQual.push({ id: uid('mq'), mid, at, type: kind, qty, reasonId: reasonId || null, by });
     if (kind === 'bad' && reasonId) Sim.raiseReasonAlarms(mid, reasonId, at, 'Quality');
-    toast(`${kind === 'bad' ? 'Recorded' : 'Added'} <b>${qty}</b> ${kind === 'bad' ? 'bad' : S.opMode === 'p' ? '' : 'good'} pcs on ${esc(DB.asset(mid).name)}${reasonId ? ` · ${esc(DB.reason(reasonId).name)}` : ''}`, kind === 'bad' ? 'crit' : 'good');
+    toast(`${kind === 'bad' ? 'Recorded' : 'Added'} <b>${qty}</b> ${kind === 'bad' ? 'NG' : S.opMode === 'p' ? '' : 'good'} pcs on ${esc(DB.asset(mid).name)}${reasonId ? ` · ${esc(DB.reason(reasonId).name)}` : ''}`, kind === 'bad' ? 'crit' : 'good');
     refreshContent();
   };
-  if (kind === 'bad') reasonPicker('quality', 'Bad reason', id => { closeModal(); write(id); }, true); else write(null);
+  if (kind === 'bad') reasonPicker('quality', 'NG reason', id => { closeModal(); write(id); }, true); else write(null);
 }
 
 /* ---------- availability history ---------- */
@@ -972,7 +973,7 @@ function pQualHist() {
   const [f, t] = range(); const rows = qualRows(f, t); const ed = canEdit('quality_history');
   EXPORTS.qlh = () => exportCSV('Quality_History', ['Quality', 'Asset', 'Datetime', 'Quantity', 'Uom', 'Reason', 'Created By', 'Updated By'], rows.map(r => [r.type, DB.asset(r.mid).name, fmtDT(r.at), Math.round(r.qty), 'ea', DB.reason(r.reasonId)?.name || '', r.by, r.upd]));
   return head('Quality History', `${csvBtn('export', 'qlh')}${ed ? `<button class="btn primary" data-act="ql-add">${ic('plus')}Add</button>` : ''}`) + filters({ print: false }) +
-    `<div class="card">${table('qlh', [{ h: 'Quality', f: r => r.type === 'good' ? pill('good', 'Good') : pill('crit', 'Bad') }, { h: 'Asset', f: r => esc(DB.asset(r.mid).name) },
+    `<div class="card">${table('qlh', [{ h: 'Quality', f: r => r.type === 'good' ? pill('good', 'Good') : pill('crit', 'NG') }, { h: 'Asset', f: r => esc(DB.asset(r.mid).name) },
       { h: 'Datetime', f: r => `<span class="mono">${fmtDT(r.at)}</span>${r.sys ? ' <span class="pill idle">hourly</span>' : ''}` }, { h: 'Quantity', cls: 'num', f: r => fmtNum(r.qty) }, { h: 'Uom', f: () => 'ea' },
       { h: 'Reason', f: r => esc(DB.reason(r.reasonId)?.name || '') }, { h: 'Created By', f: r => esc(r.by) }, { h: 'Updated By', f: r => esc(r.upd) },
       { h: 'Action', cls: 'num', f: r => ed ? `<div class="acts"><button class="btn sm" data-act="ql-edit" data-arg="${r.id}">Edit</button><button class="btn sm danger" data-act="ql-del" data-arg="${r.id}">Delete</button></div>` : '' }], rows)}</div>`;
@@ -990,7 +991,7 @@ function qualForm(r) {
   openModal({
     title: r ? 'Edit Quality History' : 'New Quality History',
     body: row('Asset', `<select class="input" id="fq-asset" ${r ? 'disabled' : ''}><option value="">Please select machine</option>${ms.map(m => `<option value="${m.id}" ${r?.mid === m.id ? 'selected' : ''}>${esc(m.name)} (${esc(m.code)})</option>`).join('')}</select>`, 'fq-asset', true) +
-      row('Type', `<div class="radio-group"><label><input type="radio" name="fq-type" value="good" ${type === 'good' ? 'checked' : ''} ${r?.sys ? 'disabled' : ''}>${pill('good', 'Good')}</label><label><input type="radio" name="fq-type" value="bad" ${type === 'bad' ? 'checked' : ''} ${r?.sys ? 'disabled' : ''}>${pill('crit', 'Bad')}</label></div>`) +
+      row('Type', `<div class="radio-group"><label><input type="radio" name="fq-type" value="good" ${type === 'good' ? 'checked' : ''} ${r?.sys ? 'disabled' : ''}>${pill('good', 'Good')}</label><label><input type="radio" name="fq-type" value="bad" ${type === 'bad' ? 'checked' : ''} ${r?.sys ? 'disabled' : ''}>${pill('crit', 'NG')}</label></div>`) +
       row('Datetime', `<input class="input" type="datetime-local" id="fq-at" value="${toLocalInput(r ? r.at : Date.now())}" ${r?.sys ? 'disabled' : ''}>`, 'fq-at', true) +
       row('Quantity', `<input class="input" type="number" min="0" id="fq-qty" value="${r ? Math.round(r.qty) : ''}">`, 'fq-qty', true) +
       row('Reason', `<select class="input" id="fq-reason" ${r?.sys ? 'disabled' : ''}><option value="">–</option>${DB.reasons('quality').map(x => `<option value="${x.id}" ${r?.reasonId === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>`, 'fq-reason'),
@@ -999,7 +1000,7 @@ function qualForm(r) {
       let ok = setErr('fq-asset', mid ? '' : 'Please select a machine.');
       ok = setErr('fq-at', r?.sys || (isFinite(at) && at <= Date.now() && at >= Sim.start) ? '' : 'Pick a time within the last 31 days.') && ok;
       ok = setErr('fq-qty', fv('fq-qty') !== '' && qty >= 0 ? '' : 'Enter a quantity of 0 or more.') && ok;
-      ok = setErr('fq-reason', tp === 'bad' && !reasonId && !r?.sys ? 'A bad entry needs a reason.' : '') && ok;
+      ok = setErr('fq-reason', tp === 'bad' && !reasonId && !r?.sys ? 'An NG entry needs a reason.' : '') && ok;
       if (!ok) return;
       if (r?.sys) setSysQual(r, qty);
       else if (r) Object.assign(Sim.manualQual.find(x => x.id === r.id), { type: tp, at, qty, reasonId, upd: S.user.username });
@@ -1094,11 +1095,12 @@ function importCheck(kind, c) {
     return ex ? res('Updated', '', () => Object.assign(stamp(ex), data)) : res('Created', '', () => DB.cfg.assets.push(stamp({ id: uid('as'), uom: 'ea', ...data }, true)));
   }
   if (kind === 'reasons') {
-    const [name, code, section, status, repair] = c;
+    const [name, code, section, rawStatus, repair] = c;
+    const status = /^ng$/i.test(rawStatus || '') ? 'bad' : rawStatus;
     if (!name || !code) return res('Failed', 'Reason Name and Reason Code are required.');
     if (!['availability', 'quality'].includes(section)) return res('Failed', 'Section must be availability or quality.');
     const okStatus = section === 'availability' ? ['warning', 'critical'] : ['bad'];
-    if (!okStatus.includes(status)) return res('Failed', `Status must be ${okStatus.join(' or ')}.`);
+    if (!okStatus.includes(status)) return res('Failed', `Status must be ${okStatus.map(sevLabel).join(' or ')}.`);
     const ex = DB.cfg.reasons.find(r => r.code === code && r.section === section);
     const data = { name, code, section, status, repair: /^y|true|1/i.test(repair || '') };
     return ex ? res('Updated', '', () => Object.assign(stamp(ex), data)) : res('Created', '', () => DB.cfg.reasons.push(stamp({ id: uid('r'), ...data }, true)));
@@ -1240,8 +1242,8 @@ function pReason() {
     { h: 'Reason Name', f: r => ed ? `<button class="link" data-act="reason-edit" data-arg="${r.id}">${esc(r.name)}</button>` : esc(r.name) }, { h: 'Reason Code', f: r => `<span class="mono">${esc(r.code)}</span>` },
     { h: 'Section', f: r => esc(r.section) }, { h: 'Status', f: r => sevPill(r.status) }, { h: 'Repair', f: r => r.repair ? pill('warn', 'Repair') : '' }, ...auditCols,
     { h: '', cls: 'num', f: r => ed ? `<button class="btn sm danger" data-act="reason-del" data-arg="${r.id}" aria-label="Delete reason">${ic('trash')}</button>` : '' }], DB.reasons(section));
-  EXPORTS.reasons = () => exportCSV('Reasons', ['Reason Name', 'Reason Code', 'Section', 'Status', 'Repair'], DB.cfg.reasons.map(r => [r.name, r.code, r.section, r.status, r.repair ? 'Y' : 'N']));
-  return adminHead('Reason Setting', `${btnEx('reasons')}${ed ? btnIm('reasons') : ''}`, 'Reasons explain lost time (Availability) and bad parts (Quality). Status decides the alarm colour.') +
+  EXPORTS.reasons = () => exportCSV('Reasons', ['Reason Name', 'Reason Code', 'Section', 'Status', 'Repair'], DB.cfg.reasons.map(r => [r.name, r.code, r.section, r.status === 'bad' ? 'NG' : r.status, r.repair ? 'Y' : 'N']));
+  return adminHead('Reason Setting', `${btnEx('reasons')}${ed ? btnIm('reasons') : ''}`, 'Reasons explain lost time (Availability) and NG parts (Quality). Status decides the alarm colour.') +
     `<div class="card" style="margin-bottom:20px"><div class="card-head"><h3>Availability Reason Setting</h3>${ed ? btnAdd('reason-add" data-arg="availability') : ''}</div>${tbl('availability')}</div>
      <div class="card"><div class="card-head"><h3>Quality Reason Setting</h3>${ed ? btnAdd('reason-add" data-arg="quality') : ''}</div>${tbl('quality')}</div>`;
 }
@@ -1252,7 +1254,7 @@ function reasonForm(r, section) {
     title: r ? 'Edit Reason' : 'New Reason',
     body: row('Reason Name', `<input class="input" id="fn-name" value="${esc(r?.name || '')}">`, 'fn-name', true) + row('Reason Code', `<input class="input mono" id="fn-code" value="${esc(r?.code || '')}">`, 'fn-code', true) +
       row('Section', `<select class="input" disabled><option>${section}</option></select>`, '', true) +
-      row('Status', `<select class="input" id="fn-status"><option value="">Select status</option>${statuses.map(s => `<option value="${s}" ${r?.status === s ? 'selected' : ''}>${s[0].toUpperCase() + s.slice(1)}</option>`).join('')}</select>`, 'fn-status', true) +
+      row('Status', `<select class="input" id="fn-status"><option value="">Select status</option>${statuses.map(s => `<option value="${s}" ${r?.status === s ? 'selected' : ''}>${sevLabel(s)}</option>`).join('')}</select>`, 'fn-status', true) +
       row('Repair', `<button type="button" class="switch" role="switch" id="fn-repair" aria-checked="${!!r?.repair}" data-act="switch"></button>`),
     onSave: () => {
       const name = fv('fn-name'), code = fv('fn-code'), status = fv('fn-status');
@@ -1387,7 +1389,7 @@ function sensorForm(s) {
     title: `Edit sensor · ${DB.asset(s.assetId).name}`,
     body: row('Sensor name', `<input class="input" id="fs-name" value="${esc(s.name)}">`, 'fs-name', true) +
       row(`Normal (${s.unit})`, `<input class="input" type="number" step="any" id="fs-nom" value="${s.nom}" style="width:140px">`, 'fs-nom', true) +
-      row('Alarm side', `<div class="radio-group"><label><input type="radio" name="fs-dir" value="hi" ${s.dir !== 'lo' ? 'checked' : ''}>High is bad</label><label><input type="radio" name="fs-dir" value="lo" ${s.dir === 'lo' ? 'checked' : ''}>Low is bad</label></div>`) +
+      row('Alarm side', `<div class="radio-group"><label><input type="radio" name="fs-dir" value="hi" ${s.dir !== 'lo' ? 'checked' : ''}>Alarm when high</label><label><input type="radio" name="fs-dir" value="lo" ${s.dir === 'lo' ? 'checked' : ''}>Alarm when low</label></div>`) +
       row(`Warning (${s.unit})`, `<input class="input" type="number" step="any" id="fs-warn" value="${s.warn ?? ''}" style="width:140px">`, 'fs-warn') +
       row(`Critical (${s.unit})`, `<input class="input" type="number" step="any" id="fs-crit" value="${s.crit ?? ''}" style="width:140px">`, 'fs-crit') +
       row('Raise alarm', `<button type="button" class="switch" role="switch" id="fs-alarm" aria-checked="${!!s.alarm}" data-act="switch"></button>`) +
