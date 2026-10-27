@@ -1,5 +1,5 @@
 /* ==========================================================================
-   OEE demo โ€” data layer
+   OEE demo — data layer
    - Config (master data) is persisted in localStorage.
    - Machine history (31 days) is generated deterministically per machine,
      then a live simulation appends data every second.
@@ -9,7 +9,7 @@
 'use strict';
 
 const HOUR = 3600e3, DAY = 864e5, HISTORY_DAYS = 31;
-const STORE_KEY = 'oee-demo-config-v7';
+const STORE_KEY = 'oee-demo-config-v8';
 
 /* ---------- small utils ---------- */
 function mulberry32(a) {
@@ -28,7 +28,7 @@ function fmtTime(t, sec = true) { const d = new Date(t); return `${pad(d.getHour
 function fmtDT(t) { return t == null ? '' : `${fmtDate(t)} ${fmtTime(t)}`; }
 function fmtHMS(sec) { sec = Math.max(0, Math.round(sec)); return `${pad(Math.floor(sec / 3600))}:${pad(Math.floor(sec % 3600 / 60))}:${pad(sec % 60)}`; }
 function fmtNum(n, d = 0) { return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
-function fmtPct(v) { return v == null || !isFinite(v) ? 'โ€“' : (v * 100).toFixed(1) + '%'; }
+function fmtPct(v) { return v == null || !isFinite(v) ? '–' : (v * 100).toFixed(1) + '%'; }
 let _uid = Date.now() % 100000;
 const uid = p => `${p}${(++_uid).toString(36)}`;
 function toLocalInput(t) { const d = new Date(t); return `${fmtDate(t)}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
@@ -42,9 +42,9 @@ function seedConfig() {
     A('p1', 'Kankyo Solutions', '001', null),
     A('gm1', 'Groove Machine 1', '001_1', 'p1'),
   ];
-  // The press groove machines, named as on the customer's Layout.png, all under Groove Machine 1. `pos` places each
-  // one on the Plant Layout floor plan: [grid row, first column, machine numbers left to right].
-  // Row 3 is the empty aisle; No.74โ€“80 are the smaller KUMPSP-303 presses.
+  // The press groove machines, all under Groove Machine 1. `pos` places each one on the Plant Layout floor plan
+  // as in the customer's Layout.png: [grid row, first column, machine numbers left to right].
+  // Row 3 is the empty aisle; No.74–80 are the smaller KUMPSP-303 presses.
   const PRESS_FLOOR = [
     [1, 1, [64, 65, 66, 67, 68, 69, 70, 71, 72, 73]],
     [2, 1, [54, 55, 56, 57, 58, 59, 60, 61, 62, 63]],
@@ -55,10 +55,38 @@ function seedConfig() {
     [8, 1, [6, 7, 8, 9, 10, 11, 12, 13, 14, 35]],
     [9, 1, [1, 2, 3, 80, 79, 78, 77, 76, 75, 74]],
   ];
+  // Machine name and asset code per number, as labelled on the customer's LayoutPlant.pdf: [name (MB code), B12 code].
+  // The drawing gives the same MB code to No.7/No.10, No.6/No.19, No.53/No.63 and No.79/No.80; kept as drawn.
+  const PRESS_ID = {
+    1: ['MB2007-00144-05', 'B12-069'], 2: ['MB2007-00144-04', 'B12-070'], 3: ['MB2007-00144-03', 'B12-071'],
+    4: ['MB2007-00142-05', 'B12-068'], 5: ['MB2007-00142-04', 'B12-067'], 6: ['MB2007-00142-02', 'B12-072'],
+    7: ['MB2007-00142-01', 'B12-073'], 8: ['MB2006-00096-02', 'B12-040'], 9: ['MB2007-00117-05', 'B12-041'],
+    10: ['MB2007-00142-01', 'B12-064'], 11: ['MB2007-00135-05', 'B12-063'], 12: ['MB2007-00135-04', 'B12-062'],
+    13: ['MB2007-00135-03', 'B12-061'], 14: ['MB2007-00135-02', 'B12-060'], 16: ['MB2005-00086-03', 'B12-038'],
+    17: ['MB2006-00096-01', 'B12-039'], 18: ['MB2007-00142-03', 'B12-066'], 19: ['MB2007-00142-02', 'B12-065'],
+    20: ['MB2003-00022-01', 'B12-006'], 21: ['MB2002-00017-03', 'B12-005'], 22: ['MB2003-00043-01', 'B12-012'],
+    23: ['MB2003-0043-02', 'B12-003'], 26: ['MB2004-00062', 'B12-021'], 30: ['MB2004-00071-01', 'B12-015'],
+    31: ['MB2003-00022-02', 'B12-011'], 32: ['MB2003-00022-03', 'B12-010'], 33: ['MB2002-00017-02', 'B12-004'],
+    35: ['MB2003-00033-01', 'B12-007'], 37: ['MB2004-00072-01', 'B12-017'], 38: ['MB2004-00071-02', 'B12-016'],
+    39: ['MB2005-00080-01', 'B12-033'], 40: ['MB2003-00022-04', 'B12-009'], 41: ['MB2004-00070-02', 'B12-014'],
+    42: ['MB2004-00070-01', 'B12-013'], 45: ['MB2005-00085-03', 'B12-035'], 46: ['MB2005-00086-02', 'B12-036'],
+    47: ['MB2005-00086-01', 'B12-037'], 48: ['MB2007-00117-03', 'B12-046'], 49: ['MB2006-00107-01', 'B12-045'],
+    50: ['MB2006-00107-02', 'B12-044'], 51: ['MB2006-00107-03', 'B12-043'], 52: ['MB2007-00117-04', 'B12-042'],
+    53: ['MB2007-00117-01', 'B12-022'], 54: ['MB2004-00072-03', 'B12-032'], 55: ['MB2004-00072-02', 'B12-031'],
+    56: ['MB2005-00085-01', 'B12-030'], 57: ['MB2005-00080-02', 'B12-029'], 58: ['MB2005-00080-03', 'B12-028'],
+    59: ['MB2004-00058-02', 'B12-027'], 60: ['MB2003-00050', 'B12-026'], 61: ['MB2003-00048-02', 'B12-025'],
+    62: ['MB2003-00048-01', 'B12-024'], 63: ['MB2007-00117-01', 'B12-048'], 64: ['MB2007-00140-05', 'B12-058'],
+    65: ['MB2007-00140-04', 'B12-057'], 66: ['MB2007-00140-03', 'B12-056'], 67: ['MB2007-00140-02', 'B12-055'],
+    68: ['MB2004-00140-01', 'B12-054'], 69: ['MB2007-00122-05', 'B12-053'], 70: ['MB2007-00122-04', 'B12-052'],
+    71: ['MB2007-00122-03', 'B12-051'], 72: ['MB2007-00122-02', 'B12-050'], 73: ['MB2007-00122-01', 'B12-049'],
+    74: ['MB2013-00157-02', 'B12-074'], 75: ['MB2013-00157-01', 'B12-075'], 76: ['MB2013-00158-01', 'B12-076'],
+    77: ['MB2013-00158-02', 'B12-077'], 78: ['MB2021-000170', 'B12-078'], 79: ['MB2022-00-00', 'B12-079'],
+    80: ['MB2022-00-00', 'B12-080'],
+  };
   const presses = PRESS_FLOOR.flatMap(([row, col0, nums]) => nums.map((n, i) => ({
-    ...M(`pg${n}`, `No.${n}`, `001_1_${pad(n)}_m`, 'gm1', n >= 74 ? 540 : 720), pos: { row, col: col0 + i }, no: n,
+    ...M(`pg${n}`, PRESS_ID[n][0], PRESS_ID[n][1], 'gm1', n >= 74 ? 540 : 720), pos: { row, col: col0 + i }, no: n,
   })));
-  assets.push(...presses.sort((a, b) => a.no - b.no).map(({ no, ...m }) => m));
+  assets.push(...presses.sort((a, b) => a.no - b.no));
   const reasons = [
     { id: 'r1', name: 'Downtime', code: 'DT01', section: 'availability', status: 'warning', repair: false },
     { id: 'r2', name: 'Setup Machine', code: 'ST01', section: 'availability', status: 'warning', repair: false },
@@ -98,7 +126,7 @@ function seedConfig() {
     const tag = `${String(dt.getFullYear()).slice(2)}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}`;
     assets.filter(a => a.isMachine).forEach((m, i) => {
       jobs.push({
-        id: `j${tag}${m.id}`, name: `PO-${tag}-${pad(i + 1)}`, target: m.rate * 16, formula: `Groove ${m.name} std`,
+        id: `j${tag}${m.id}`, name: `PO-${tag}-${pad(i + 1)}`, target: m.rate * 16, formula: `Groove No.${m.no} std`,
         idealQty: m.rate, idealPer: 1, idealUnit: 'hour', machines: [m.id], finishGood: m.id, priority: i % 4 === 0 ? 'high' : 'normal',
         type: 'auto', start: day + 6 * HOUR, end: day + 22 * HOUR, cavity: 1,
         createdBy: 'admin', createdAt: day - 2 * DAY, updatedBy: 'admin', updatedAt: day - 2 * DAY,
@@ -124,7 +152,7 @@ function seedConfig() {
   ];
   const stamp = { createdBy: 'admin', createdAt: today - 120 * DAY, updatedBy: 'admin', updatedAt: today - 30 * DAY };
   [assets, reasons, roles, users, alarmRules, banners].forEach(list => list.forEach(x => Object.assign(x, { ...stamp, ...x })));
-  return { version: 7, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify, ...Health.seed(assets), ...Maint.seed(assets) };
+  return { version: 8, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify, ...Health.seed(assets), ...Maint.seed(assets) };
 }
 
 const MENU_KEYS = [
@@ -152,7 +180,7 @@ const DB = {
   cfg: null,
   load() {
     try { const raw = localStorage.getItem(STORE_KEY); if (raw) { this.cfg = JSON.parse(raw); } } catch (e) { /* storage unavailable */ }
-    if (!this.cfg || this.cfg.version !== 7) this.cfg = seedConfig();
+    if (!this.cfg || this.cfg.version !== 8) this.cfg = seedConfig();
     this.index();
   },
   save() { this.index(); try { localStorage.setItem(STORE_KEY, JSON.stringify(this.cfg)); } catch (e) { /* quota or blocked */ } },
@@ -178,7 +206,7 @@ const DB = {
   isUnder(id, ancestorId) { return this.ancestors(id).some(a => a.id === ancestorId); },
   reason(id) { return this.reasonById.get(id); },
   reasons(section) { return this.cfg.reasons.filter(r => r.section === section); },
-  path(id) { return this.ancestors(id).reverse().map(a => a.name).join(' โ€บ '); },
+  path(id) { return this.ancestors(id).reverse().map(a => a.name).join(' › '); },
 };
 
 /* ---------- plan production ---------- */

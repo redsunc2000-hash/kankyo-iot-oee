@@ -27,9 +27,9 @@ const SENSOR_TYPES = {
 };
 
 /* sensors and wear counters per machine type; tool.days = calendar days one tool life lasts */
-/* every machine on the floor is a press groove machine, named "No.<n>" as on the customer's layout */
+/* every machine on the floor is a press groove machine, named by its MB code as on the customer's layout */
 const MACHINE_KINDS = [
-  { re: /^No\.\s?\d+/i, kind: 'Press groove', pmHours: 500, sensors: { vib: { name: 'Flywheel vibration' }, mtemp: { name: 'Main motor temperature' }, oil: {}, hyd: {}, pwr: { nom: 11, idle: 1.5 } }, tool: { name: 'Press strokes', event: 'Groove die change', days: 16 } },
+  { re: /^MB\d{4}-/i, kind: 'Press groove', pmHours: 500, sensors: { vib: { name: 'Flywheel vibration' }, mtemp: { name: 'Main motor temperature' }, oil: {}, hyd: {}, pwr: { nom: 11, idle: 1.5 } }, tool: { name: 'Press strokes', event: 'Groove die change', days: 16 } },
 ];
 const GENERIC_KIND = { kind: 'General machine', pmHours: 400, sensors: { vib: {}, mtemp: {}, cur: {}, pwr: {} }, tool: null };
 const ENV_SENSORS = { rt: {}, rh: {}, pm25: {} };

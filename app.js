@@ -467,8 +467,9 @@ function pLayout() {
   const ms = DB.cfg.assets.filter(a => a.isMachine && a.pos && assetVisible(a));
   const items = ms.map(m => { const c = calc(m.id, f, t, S.onlyJob); return { m, c, sv: machineSeverity(m, c) }; });
   const count = k => items.filter(x => x.sv.k === k).length;
-  const node = ({ m, c, sv }) => `<button class="lay-node fl sv-${sv.k} ${S.layoutFull ? '' : 'min'} ${m.id === S.assetId ? 'sel' : ''}" style="grid-row:${m.pos.row};grid-column:${m.pos.col}" data-act="scope" data-arg="${m.id}" title="${esc(m.name)} · ${esc(sv.why)}">
-      <div class="hd"><span class="nm">${esc(m.name)}</span><span class="sv-tag">${SEV_LABEL[sv.k]}</span></div>
+  const node = ({ m, c, sv }) => `<button class="lay-node fl sv-${sv.k} ${S.layoutFull ? '' : 'min'} ${m.id === S.assetId ? 'sel' : ''}" style="grid-row:${m.pos.row};grid-column:${m.pos.col}" data-act="scope" data-arg="${m.id}" title="${esc(m.name)} · ${esc(m.code)}${m.no ? ` · No.${m.no}` : ''} · ${esc(sv.why)}">
+      <div class="hd"><span class="nm">${esc(m.name)}</span></div>
+      <div class="sub">${m.no ? `<span>No.${m.no}</span>` : ''}<span class="sv-tag">${SEV_LABEL[sv.k]}</span></div>
       <div class="oee">OEE <b style="color:var(${Charts.levelVar(c.OEE)})">${fmtPct(c.OEE)}</b></div>
       <div class="kv"><span>A <b>${fmtPct(c.A)}</b></span><span>P <b>${fmtPct(c.P)}</b></span><span>Q <b>${fmtPct(c.Q)}</b></span></div>
       <div class="bar"><i style="width:${Math.min(100, (c.OEE || 0) * 100)}%;background:var(${Charts.levelVar(c.OEE)})"></i></div></button>`;

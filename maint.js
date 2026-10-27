@@ -75,10 +75,10 @@ const Maint = {
       if (i % 2 === 0 && now - cur.start > HOUR) checks.push(mk(cur, cur.start + (15 + i * 3) * MIN));
     });
     const notes = [
-      ['Groove Machine 1 ran steady. No.12 flywheel is louder than usual, maintenance has a work order.', 'Watch the No.12 flywheel vibration.'],
-      ['No.64 groove die close to its stroke limit and only 1 spare die set in store.', 'Purchasing to order groove die sets.'],
-      ['No.7 stopped twice for work piece stuck in the die, cleared by operator.', ''],
-      ['No.74 stroke counter missed counts. Proximity sensor replaced.', 'Check counter against strokes at start of shift.'],
+      ['Groove Machine 1 ran steady. MB2007-00135-04 (No.12) flywheel is louder than usual, maintenance has a work order.', 'Watch the MB2007-00135-04 flywheel vibration.'],
+      ['MB2007-00140-05 (No.64) groove die close to its stroke limit and only 1 spare die set in store.', 'Purchasing to order groove die sets.'],
+      ['MB2007-00142-01 (No.7) stopped twice for work piece stuck in the die, cleared by operator.', ''],
+      ['MB2013-00157-02 (No.74) stroke counter missed counts. Proximity sensor replaced.', 'Check counter against strokes at start of shift.'],
     ];
     const handovers = notes.map(([note, issues], k) => { const sh = shiftAt(now - 12 * HOUR * (k + 1)); return { id: uid('ho'), shift: sh.key, at: sh.end - 12 * MIN, by: k % 2 ? 'qc.lead' : 'manager', scopeId: 'p1', note, issues }; });
     return { parts, workOrders, checks, handovers, tariff: { on: 4.18, off: 2.6, ef: 0.5 } };
