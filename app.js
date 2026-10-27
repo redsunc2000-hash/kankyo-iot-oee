@@ -451,8 +451,7 @@ function pOverview() {
     `<div class="card"><div class="card-head"><h3>OEE History</h3>${Charts.legend(SERIES)}${csvBtn('export', 'oee')}</div>${chart(W => Charts.area(pts, SERIES, { W, H: 260, size }))}</div>`;
 }
 
-// Plant Layout boxes are tinted by severity: a machine by its live state (stop reason severity, or OEE < 60% while
-// running); a group by the worst machine under it, so a problem stays visible when the tree is minimized.
+// Plant Layout boxes are tinted by severity: a machine by its live state (stop reason severity, or OEE < 60% while running).
 const SEV_RANK = { idle: 0, good: 1, warn: 2, crit: 3 };
 const SEV_LABEL = { idle: 'Idle', good: 'Running', warn: 'Warning', crit: 'Critical' };
 function machineSeverity(m, c) {
@@ -461,32 +460,21 @@ function machineSeverity(m, c) {
   if (st === 'idle') return { k: 'idle', why: 'No data' };
   return c.OEE != null && c.OEE < 0.6 ? { k: 'warn', why: 'Running, OEE below 60%' } : { k: 'good', why: 'Running' };
 }
+// Machines only, no zones: every machine with a floor position (asset.pos) is drawn where it stands on the floor plan.
+// Row 3 is the aisle carrying the "Press Groove Machine" label, as on the customer's drawing.
 function pLayout() {
   const [f, t] = range();
-  const calcs = new Map(); const cOf = id => { if (!calcs.has(id)) calcs.set(id, calc(id, f, t, S.onlyJob)); return calcs.get(id); };
-  const severity = a => {
-    if (a.isMachine) return machineSeverity(a, cOf(a.id));
-    const all = DB.machinesUnder(a.id).filter(assetVisible).map(m => machineSeverity(m, cOf(m.id)));
-    if (!all.length) return { k: 'idle', why: 'No machines' };
-    const worst = all.reduce((x, y) => SEV_RANK[y.k] > SEV_RANK[x.k] ? y : x).k;
-    const n = all.filter(x => x.k === worst).length;
-    return { k: worst, why: worst === 'good' ? `All ${all.length} machines running` : `${n} of ${all.length} machines ${SEV_LABEL[worst].toLowerCase()}` };
-  };
-  // Only two levels are drawn: each zone (a child of the plant) with its machines listed straight under it.
-  const sc = scope(); const chain = DB.ancestors(sc.id).reverse();
-  const zones = chain.length > 1 ? [chain[1]] : DB.kids(sc.id).filter(a => !a.isMachine);
-  const node = (a, kids = []) => {
-    if (!assetVisible(a)) return '';
-    const c = cOf(a.id); const sv = severity(a);
-    return `<div class="lay-row"><button class="lay-node sv-${sv.k} ${S.layoutFull ? '' : 'min'}" data-act="scope" data-arg="${a.id}" title="${esc(DB.path(a.id))} · ${esc(sv.why)}">
-        <div class="hd"><span class="nm">${esc(a.name)}</span><span class="sv-tag">${SEV_LABEL[sv.k]}</span></div>
-        <div class="kv"><span>OEE <b style="color:var(${Charts.levelVar(c.OEE)})">${fmtPct(c.OEE)}</b></span><span>Avail. <b>${fmtPct(c.A)}</b></span><span>Perf. <b>${fmtPct(c.P)}</b></span><span>Quality <b>${fmtPct(c.Q)}</b></span></div>
-        <div class="bar"><i style="width:${Math.min(100, (c.OEE || 0) * 100)}%;background:var(${Charts.levelVar(c.OEE)})"></i></div></button>
-      ${kids.length ? `<div class="lay-children">${kids.map(m => node(m)).join('')}</div>` : ''}</div>`;
-  };
-  const zoneNode = z => node(z, DB.machinesUnder(chain.length > 1 ? sc.id : z.id).filter(assetVisible));
-  return head('Plant Layout', `<div class="seg"><button class="${S.layoutFull ? 'on' : ''}" data-act="layout" data-arg="full">Full</button><button class="${S.layoutFull ? '' : 'on'}" data-act="layout" data-arg="min">Minimize</button></div>`, 'Click a zone or machine to focus the layout on it.') + filters() +
-    `<div class="card"><div class="card-head"><h3>${esc(DB.path(S.assetId))}</h3><div class="legend"><span><i style="background:var(--good)"></i>Running</span><span><i style="background:var(--warn)"></i>Warning / OEE &lt; 60%</span><span><i style="background:var(--crit)"></i>Critical</span><span><i style="background:var(--idle)"></i>Idle</span><span class="hint">Zones show their worst machine</span></div></div><div class="layout-canvas"><div class="lay-zones">${zones.map(zoneNode).join('') || node(sc)}</div></div></div>`;
+  const ms = DB.cfg.assets.filter(a => a.isMachine && a.pos && assetVisible(a));
+  const items = ms.map(m => { const c = calc(m.id, f, t, S.onlyJob); return { m, c, sv: machineSeverity(m, c) }; });
+  const count = k => items.filter(x => x.sv.k === k).length;
+  const node = ({ m, c, sv }) => `<button class="lay-node fl sv-${sv.k} ${S.layoutFull ? '' : 'min'} ${m.id === S.assetId ? 'sel' : ''}" style="grid-row:${m.pos.row};grid-column:${m.pos.col}" data-act="scope" data-arg="${m.id}" title="${esc(m.name)} · ${esc(sv.why)}">
+      <div class="hd"><span class="nm">${esc(m.name.replace(/^Press Groove\s*/i, ''))}</span><span class="sv-tag">${SEV_LABEL[sv.k]}</span></div>
+      <div class="oee">OEE <b style="color:var(${Charts.levelVar(c.OEE)})">${fmtPct(c.OEE)}</b></div>
+      <div class="kv"><span>A <b>${fmtPct(c.A)}</b></span><span>P <b>${fmtPct(c.P)}</b></span><span>Q <b>${fmtPct(c.Q)}</b></span></div>
+      <div class="bar"><i style="width:${Math.min(100, (c.OEE || 0) * 100)}%;background:var(${Charts.levelVar(c.OEE)})"></i></div></button>`;
+  return head('Plant Layout', `<div class="seg"><button class="${S.layoutFull ? 'on' : ''}" data-act="layout" data-arg="full">Full</button><button class="${S.layoutFull ? '' : 'on'}" data-act="layout" data-arg="min">Minimize</button></div>`, 'Machines are placed as on the factory floor. Click a machine to select it.') + filters() +
+    `<div class="card"><div class="card-head"><h3>Press Groove Machine · ${ms.length} machines</h3><div class="legend"><span><i style="background:var(--good)"></i>Running ${count('good')}</span><span><i style="background:var(--warn)"></i>Warning / OEE &lt; 60% ${count('warn')}</span><span><i style="background:var(--crit)"></i>Critical ${count('crit')}</span><span><i style="background:var(--idle)"></i>Idle ${count('idle')}</span></div></div>
+    <div class="layout-canvas">${ms.length ? `<div class="floor"><div class="floor-aisle">Press Groove Machine</div>${items.map(node).join('')}</div>` : '<p class="hint">You have no access to any machine on the floor plan.</p>'}</div></div>`;
 }
 
 function reasonBars(map, status) {

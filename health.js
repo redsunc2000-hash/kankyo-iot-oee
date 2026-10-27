@@ -49,6 +49,7 @@ const MACHINE_KINDS = [
   { re: /winding/i, kind: 'Winding', pmHours: 400, sensors: { tension: { nom: 38, warn: 31, crit: 26 }, vib: {}, cur: { nom: 8, warn: 11, crit: 13 }, mtemp: {}, pwr: { nom: 4.5 } }, tool: { name: 'Wound elements', event: 'Guide roller cleaning', days: 15 } },
   { re: /sinter/i, kind: 'Sintering oven', pmHours: 450, sensors: { oven: {}, vib: { name: 'Exhaust fan vibration' }, cur: { name: 'Fan motor current', nom: 9, warn: 12, crit: 14 }, pwr: { nom: 35, idle: 20 } }, tool: null },
   { re: /leak/i, kind: 'Leak testing', pmHours: 400, sensors: { testp: {}, decay: {}, air: {}, pwr: { nom: 1.5, idle: 0.4 } }, tool: { name: 'Test cycles', event: 'Fixture seal change', days: 12 } },
+  { re: /press groove/i, kind: 'Press', pmHours: 500, sensors: { vib: { name: 'Flywheel vibration' }, oil: {}, hyd: {}, pwr: { nom: 11, idle: 1.5 } }, tool: { name: 'Press strokes', event: 'Groove die change', days: 16 } },
   { re: /assembl/i, kind: 'Assembly', pmHours: 400, sensors: { air: {}, vib: { name: 'Conveyor vibration' }, cur: {}, mtemp: {}, pwr: { nom: 6 } }, tool: { name: 'Assembly cycles', event: 'Gripper service', days: 21 } },
 ];
 const GENERIC_KIND = { kind: 'General machine', pmHours: 400, sensors: { vib: {}, mtemp: {}, cur: {}, pwr: {} }, tool: null };

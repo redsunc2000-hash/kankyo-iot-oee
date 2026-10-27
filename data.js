@@ -9,7 +9,7 @@
 'use strict';
 
 const HOUR = 3600e3, DAY = 864e5, HISTORY_DAYS = 31;
-const STORE_KEY = 'oee-demo-config-v4';
+const STORE_KEY = 'oee-demo-config-v5';
 
 /* ---------- small utils ---------- */
 function mulberry32(a) {
@@ -63,6 +63,23 @@ function seedConfig() {
     M('m13', 'Housing Injection machine B', '001_1_1_2_2_m', 'lsm', 300),
     M('m14', 'Pressure Leak Test machine', '001_1_1_2_3_m', 'lsm', 160),
   ];
+  // Press Groove machines sit straight under the plant (no zone). `pos` places each one on the Plant Layout
+  // floor plan as drawn in the customer's Layout.png: [grid row, first column, machine numbers left to right].
+  // Row 3 is the aisle labelled "Press Groove Machine"; No.74–80 are the smaller KUMPSP-303 presses.
+  const PRESS_FLOOR = [
+    [1, 1, [64, 65, 66, 67, 68, 69, 70, 71, 72, 73]],
+    [2, 1, [54, 55, 56, 57, 58, 59, 60, 61, 62, 63]],
+    [4, 3, [46, 47, 48, 49, 50, 51, 52, 53]],
+    [5, 4, [45, 37, 38, 39, 40, 41, 42]],
+    [6, 2, [4, 5, 26, 30, 31, 32, 33]],
+    [7, 1, [16, 17, 18, 19, 20, 21, 22, 23]],
+    [8, 1, [6, 7, 8, 9, 10, 11, 12, 13, 14, 35]],
+    [9, 1, [1, 2, 3, 80, 79, 78, 77, 76, 75, 74]],
+  ];
+  const presses = PRESS_FLOOR.flatMap(([row, col0, nums]) => nums.map((n, i) => ({
+    ...M(`pg${n}`, `Press Groove No.${n}`, `001_PG_${pad(n)}_m`, 'p1', n >= 74 ? 540 : 720), pos: { row, col: col0 + i }, no: n,
+  })));
+  assets.push(...presses.sort((a, b) => a.no - b.no).map(({ no, ...m }) => m));
   const reasons = [
     { id: 'r1', name: 'Downtime', code: 'DT01', section: 'availability', status: 'warning', repair: false },
     { id: 'r2', name: 'Setup Machine', code: 'ST01', section: 'availability', status: 'warning', repair: false },
@@ -128,7 +145,7 @@ function seedConfig() {
   ];
   const stamp = { createdBy: 'admin', createdAt: today - 120 * DAY, updatedBy: 'admin', updatedAt: today - 30 * DAY };
   [assets, reasons, roles, users, alarmRules, banners].forEach(list => list.forEach(x => Object.assign(x, { ...stamp, ...x })));
-  return { version: 4, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify, ...Health.seed(assets), ...Maint.seed(assets) };
+  return { version: 5, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify, ...Health.seed(assets), ...Maint.seed(assets) };
 }
 
 const MENU_KEYS = [
@@ -156,7 +173,7 @@ const DB = {
   cfg: null,
   load() {
     try { const raw = localStorage.getItem(STORE_KEY); if (raw) { this.cfg = JSON.parse(raw); } } catch (e) { /* storage unavailable */ }
-    if (!this.cfg || this.cfg.version !== 4) this.cfg = seedConfig();
+    if (!this.cfg || this.cfg.version !== 5) this.cfg = seedConfig();
     this.index();
   },
   save() { this.index(); try { localStorage.setItem(STORE_KEY, JSON.stringify(this.cfg)); } catch (e) { /* quota or blocked */ } },
