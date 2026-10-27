@@ -65,7 +65,7 @@ function seedConfig() {
   ];
   // Press Groove machines sit straight under the plant (no zone). `pos` places each one on the Plant Layout
   // floor plan as drawn in the customer's Layout.png: [grid row, first column, machine numbers left to right].
-  // Row 3 is the aisle labelled "Press Groove Machine"; No.74–80 are the smaller KUMPSP-303 presses.
+  // Row 3 is the empty aisle; No.74–80 are the smaller KUMPSP-303 presses.
   const PRESS_FLOOR = [
     [1, 1, [64, 65, 66, 67, 68, 69, 70, 71, 72, 73]],
     [2, 1, [54, 55, 56, 57, 58, 59, 60, 61, 62, 63]],

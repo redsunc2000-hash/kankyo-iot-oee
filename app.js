@@ -461,7 +461,7 @@ function machineSeverity(m, c) {
   return c.OEE != null && c.OEE < 0.6 ? { k: 'warn', why: 'Running, OEE below 60%' } : { k: 'good', why: 'Running' };
 }
 // Machines only, no zones: every machine with a floor position (asset.pos) is drawn where it stands on the floor plan.
-// Row 3 is the aisle carrying the "Press Groove Machine" label, as on the customer's drawing.
+// Row 3 is left empty as the aisle, as on the customer's drawing.
 function pLayout() {
   const [f, t] = range();
   const ms = DB.cfg.assets.filter(a => a.isMachine && a.pos && assetVisible(a));
@@ -473,8 +473,8 @@ function pLayout() {
       <div class="kv"><span>A <b>${fmtPct(c.A)}</b></span><span>P <b>${fmtPct(c.P)}</b></span><span>Q <b>${fmtPct(c.Q)}</b></span></div>
       <div class="bar"><i style="width:${Math.min(100, (c.OEE || 0) * 100)}%;background:var(${Charts.levelVar(c.OEE)})"></i></div></button>`;
   return head('Plant Layout', `<div class="seg"><button class="${S.layoutFull ? 'on' : ''}" data-act="layout" data-arg="full">Full</button><button class="${S.layoutFull ? '' : 'on'}" data-act="layout" data-arg="min">Minimize</button></div>`, 'Machines are placed as on the factory floor. Click a machine to select it.') + filters() +
-    `<div class="card"><div class="card-head"><h3>Press Groove Machine · ${ms.length} machines</h3><div class="legend"><span><i style="background:var(--good)"></i>Running ${count('good')}</span><span><i style="background:var(--warn)"></i>Warning / OEE &lt; 60% ${count('warn')}</span><span><i style="background:var(--crit)"></i>Critical ${count('crit')}</span><span><i style="background:var(--idle)"></i>Idle ${count('idle')}</span></div></div>
-    <div class="layout-canvas">${ms.length ? `<div class="floor"><div class="floor-aisle">Press Groove Machine</div>${items.map(node).join('')}</div>` : '<p class="hint">You have no access to any machine on the floor plan.</p>'}</div></div>`;
+    `<div class="card"><div class="card-head"><h3>${ms.length} machines</h3><div class="legend"><span><i style="background:var(--good)"></i>Running ${count('good')}</span><span><i style="background:var(--warn)"></i>Warning / OEE &lt; 60% ${count('warn')}</span><span><i style="background:var(--crit)"></i>Critical ${count('crit')}</span><span><i style="background:var(--idle)"></i>Idle ${count('idle')}</span></div></div>
+    <div class="layout-canvas">${ms.length ? `<div class="floor">${items.map(node).join('')}</div>` : '<p class="hint">You have no access to any machine on the floor plan.</p>'}</div></div>`;
 }
 
 function reasonBars(map, status) {
