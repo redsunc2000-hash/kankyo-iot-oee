@@ -1,5 +1,5 @@
 /* ==========================================================================
-   OEE demo — data layer
+   OEE demo โ€” data layer
    - Config (master data) is persisted in localStorage.
    - Machine history (31 days) is generated deterministically per machine,
      then a live simulation appends data every second.
@@ -9,7 +9,7 @@
 'use strict';
 
 const HOUR = 3600e3, DAY = 864e5, HISTORY_DAYS = 31;
-const STORE_KEY = 'oee-demo-config-v6';
+const STORE_KEY = 'oee-demo-config-v7';
 
 /* ---------- small utils ---------- */
 function mulberry32(a) {
@@ -28,7 +28,7 @@ function fmtTime(t, sec = true) { const d = new Date(t); return `${pad(d.getHour
 function fmtDT(t) { return t == null ? '' : `${fmtDate(t)} ${fmtTime(t)}`; }
 function fmtHMS(sec) { sec = Math.max(0, Math.round(sec)); return `${pad(Math.floor(sec / 3600))}:${pad(Math.floor(sec % 3600 / 60))}:${pad(sec % 60)}`; }
 function fmtNum(n, d = 0) { return Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }); }
-function fmtPct(v) { return v == null || !isFinite(v) ? '–' : (v * 100).toFixed(1) + '%'; }
+function fmtPct(v) { return v == null || !isFinite(v) ? 'โ€“' : (v * 100).toFixed(1) + '%'; }
 let _uid = Date.now() % 100000;
 const uid = p => `${p}${(++_uid).toString(36)}`;
 function toLocalInput(t) { const d = new Date(t); return `${fmtDate(t)}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
@@ -44,7 +44,7 @@ function seedConfig() {
   ];
   // The press groove machines, named as on the customer's Layout.png, all under Groove Machine 1. `pos` places each
   // one on the Plant Layout floor plan: [grid row, first column, machine numbers left to right].
-  // Row 3 is the empty aisle; No.74–80 are the smaller KUMPSP-303 presses.
+  // Row 3 is the empty aisle; No.74โ€“80 are the smaller KUMPSP-303 presses.
   const PRESS_FLOOR = [
     [1, 1, [64, 65, 66, 67, 68, 69, 70, 71, 72, 73]],
     [2, 1, [54, 55, 56, 57, 58, 59, 60, 61, 62, 63]],
@@ -63,12 +63,12 @@ function seedConfig() {
     { id: 'r1', name: 'Downtime', code: 'DT01', section: 'availability', status: 'warning', repair: false },
     { id: 'r2', name: 'Setup Machine', code: 'ST01', section: 'availability', status: 'warning', repair: false },
     { id: 'r3', name: 'Work piece stuck', code: 'WS01', section: 'availability', status: 'warning', repair: false },
-    { id: 'r4', name: 'Change Tool', code: 'CT01', section: 'availability', status: 'critical', repair: false },
+    { id: 'r4', name: 'Die change', code: 'DC01', section: 'availability', status: 'critical', repair: false },
     { id: 'r5', name: 'Machine Breakdown', code: 'MB01', section: 'availability', status: 'critical', repair: true },
     { id: 'q1', name: 'QC Reject', code: 'QC01', section: 'quality', status: 'bad', repair: false },
-    { id: 'q2', name: 'Upper size', code: 'US01', section: 'quality', status: 'bad', repair: false },
-    { id: 'q3', name: 'Lower size', code: 'LS01', section: 'quality', status: 'bad', repair: false },
-    { id: 'q4', name: 'Top Scratched', code: 'TS01', section: 'quality', status: 'bad', repair: false },
+    { id: 'q2', name: 'Groove too deep', code: 'GD01', section: 'quality', status: 'bad', repair: false },
+    { id: 'q3', name: 'Groove too shallow', code: 'GS01', section: 'quality', status: 'bad', repair: false },
+    { id: 'q4', name: 'Burr / scratch', code: 'BS01', section: 'quality', status: 'bad', repair: false },
   ];
   const MENU = MENU_KEYS.reduce((o, g) => { g.items.forEach(i => o[i.key] = 'edit'); return o; }, {});
   const roles = [
@@ -107,10 +107,10 @@ function seedConfig() {
   }
   const alarmRules = [
     { id: 'al1', name: 'Machine Breakdown', severity: 'critical', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r5'], qReasons: [], sendEmail: true, emails: ['maintenance@kankyo-solutions.example'], sendLine: true, lines: ['ln1'] },
-    { id: 'al2', name: 'Change tool', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r4'], qReasons: [], sendEmail: false, emails: [], sendLine: true, lines: ['ln1'] },
+    { id: 'al2', name: 'Die change', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r4'], qReasons: [], sendEmail: false, emails: [], sendLine: true, lines: ['ln1'] },
     { id: 'al3', name: 'Work piece stuck', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r3'], qReasons: [], sendEmail: false, emails: [], sendLine: true, lines: ['ln1'] },
     { id: 'al4', name: 'MachineStop', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r1', 'r2'], qReasons: [], sendEmail: false, emails: [], sendLine: false, lines: [] },
-    { id: 'al5', name: 'Top scratched', severity: 'critical', type: 'machine', assetId: 'gm1', aTarget: null, pTarget: null, qTarget: null, aReasons: [], qReasons: ['q4'], sendEmail: true, emails: ['qc@kankyo-solutions.example'], sendLine: false, lines: [] },
+    { id: 'al5', name: 'Burr / scratch', severity: 'critical', type: 'machine', assetId: 'gm1', aTarget: null, pTarget: null, qTarget: null, aReasons: [], qReasons: ['q4'], sendEmail: true, emails: ['qc@kankyo-solutions.example'], sendLine: false, lines: [] },
     { id: 'al6', name: 'Groove Machine 1 OEE below target', severity: 'warning', type: 'machine', assetId: 'gm1', aTarget: 85, pTarget: 85, qTarget: 90, aReasons: [], qReasons: [], sendEmail: true, emails: ['plant.manager@kankyo-solutions.example'], sendLine: false, lines: [] },
   ];
   const banners = [
@@ -124,7 +124,7 @@ function seedConfig() {
   ];
   const stamp = { createdBy: 'admin', createdAt: today - 120 * DAY, updatedBy: 'admin', updatedAt: today - 30 * DAY };
   [assets, reasons, roles, users, alarmRules, banners].forEach(list => list.forEach(x => Object.assign(x, { ...stamp, ...x })));
-  return { version: 6, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify, ...Health.seed(assets), ...Maint.seed(assets) };
+  return { version: 7, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify, ...Health.seed(assets), ...Maint.seed(assets) };
 }
 
 const MENU_KEYS = [
@@ -152,7 +152,7 @@ const DB = {
   cfg: null,
   load() {
     try { const raw = localStorage.getItem(STORE_KEY); if (raw) { this.cfg = JSON.parse(raw); } } catch (e) { /* storage unavailable */ }
-    if (!this.cfg || this.cfg.version !== 6) this.cfg = seedConfig();
+    if (!this.cfg || this.cfg.version !== 7) this.cfg = seedConfig();
     this.index();
   },
   save() { this.index(); try { localStorage.setItem(STORE_KEY, JSON.stringify(this.cfg)); } catch (e) { /* quota or blocked */ } },
@@ -178,7 +178,7 @@ const DB = {
   isUnder(id, ancestorId) { return this.ancestors(id).some(a => a.id === ancestorId); },
   reason(id) { return this.reasonById.get(id); },
   reasons(section) { return this.cfg.reasons.filter(r => r.section === section); },
-  path(id) { return this.ancestors(id).reverse().map(a => a.name).join(' › '); },
+  path(id) { return this.ancestors(id).reverse().map(a => a.name).join(' โ€บ '); },
 };
 
 /* ---------- plan production ---------- */

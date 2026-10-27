@@ -271,7 +271,7 @@ function renderLogin(err) {
     <section class="login-hero" style="background:radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, hsl(${b[0]?.hue || 214} 70% 55%) 16%, transparent), transparent 60%)">
       <div class="brand"><img class="brand-logo" src="logo-mark.png" alt="" width="40" height="40"><span>Kankyo IoT<small>Production Monitoring</small></span></div>
       <div style="display:grid;gap:12px"><h1>Every machine, every minute, measured as OEE.</h1>
-      <p>IIoT monitoring for Kankyo Solutions: availability, performance and quality from the line to the plant, with alarms when a machine needs attention.</p></div>
+      <p>IIoT monitoring for Kankyo Solutions: availability, performance and quality of every groove press machine, with alarms when a machine needs attention.</p></div>
       <div class="hero-gauges" aria-label="Plant OEE today">
         ${[['OEE', c.OEE], ['Avail.', c.A], ['Perf.', c.P], ['Quality', c.Q]].map(([l, v]) => `<div class="mini"><div><b style="color:var(${Charts.levelVar(v)})">${fmtPct(v)}</b><span>${l}</span></div></div>`).join('')}
       </div>

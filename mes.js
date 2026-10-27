@@ -96,18 +96,18 @@ const Mes = {
       .forEach(([matId, qty, h, supplier, supLot]) => this.receive({ matId, qty, supplier, supLot, location: 'RM store' }, 'mes.planner', ago(h)));
 
     const crew = { user: 'mes.op', insp: 'mes.qc' };
-    const o1 = this.seedOrder('pr1', 4000, ago(30), 'normal', 'Siam Clean Air Co.', { ...crew, endAgo: 50, done: 2 });
-    const o2 = this.seedOrder('pr2', 3000, ago(12), 'normal', 'AquaPure Distribution', { ...crew, endAgo: 30, done: 2, failFirst: 0 });
-    const o3 = this.seedOrder('pr1', 6000, ago(-14), 'high', 'Siam Clean Air Co.', { ...crew, endAgo: 0.3, done: 1, partial: true });
-    this.seedOrder('pr2', 5000, ago(-20), 'normal', 'AquaPure Distribution', { ...crew, endAgo: 0.5, done: 0, partial: true });
-    this.seedOrder('pr3', 8000, ago(-30), 'normal', 'HomeAir Retail', { release: true });
-    this.seedOrder('pr1', 5000, ago(-72), 'normal', 'CleanRoom Tech', {});
-    this.seedOrder('pr2', 12000, ago(-40), 'high', 'AquaPure Distribution', {});
+    const o1 = this.seedOrder('pr1', 4000, ago(30), 'normal', 'Thai Auto Parts Co.', { ...crew, endAgo: 50, done: 2 });
+    const o2 = this.seedOrder('pr2', 3000, ago(12), 'normal', 'Siam HVAC Systems', { ...crew, endAgo: 30, done: 2, failFirst: 0 });
+    const o3 = this.seedOrder('pr1', 6000, ago(-14), 'high', 'Thai Auto Parts Co.', { ...crew, endAgo: 0.3, done: 1, partial: true });
+    this.seedOrder('pr2', 5000, ago(-20), 'normal', 'Siam HVAC Systems', { ...crew, endAgo: 0.5, done: 0, partial: true });
+    this.seedOrder('pr3', 8000, ago(-30), 'normal', 'Eastern Metal Works', { release: true });
+    this.seedOrder('pr1', 5000, ago(-72), 'normal', 'Bangkok Panel Industry', {});
+    this.seedOrder('pr2', 12000, ago(-40), 'high', 'Siam HVAC Systems', {});
 
     this.close(o1, 'mes.planner', ago(46));
-    this.c.lots.filter(l => l.kind === 'fg' && l.orderId === o1.id).forEach((l, i) => this.ship(l, i ? 1000 : l.qty, 'Siam Clean Air Co.', 'mes.planner', ago(40 - i)));
+    this.c.lots.filter(l => l.kind === 'fg' && l.orderId === o1.id).forEach((l, i) => this.ship(l, i ? 1000 : l.qty, 'Thai Auto Parts Co.', 'mes.planner', ago(40 - i)));
     const fg2 = this.c.lots.filter(l => l.kind === 'fg' && l.orderId === o2.id);
-    this.ship(fg2[0], fg2[0].qty, 'AquaPure Distribution', 'mes.planner', ago(20));
+    this.ship(fg2[0], fg2[0].qty, 'Siam HVAC Systems', 'mes.planner', ago(20));
     const n1 = this.raiseNcr({ lotId: fg2[fg2.length - 1].id, qty: 60, defect: 'q4', desc: 'Scratches on the top surface found at packing.' }, 'mes.qc', ago(26));
     this.dispose(n1, 'scrap', 'Scratched clips scrapped. Die K3-2 polished.', 'mes.qc', ago(24));
     const oil = this.c.lots.find(l => l.matId === 'mt2' && l.status === 'available' && l.at < ago(90));
@@ -133,7 +133,7 @@ const Mes = {
       this.startOp(o, k, user, s);
       const ok = pass => op.checks.map(c => ({ ...c, ok: pass, val: '' }));
       if (op.inspect === 'first') {
-        if (k === failFirst) this.inspect(o, k, { type: 'first', items: ok(true).map((x, i) => i === 0 ? { ...x, ok: false, val: 'out of spec' } : x), note: 'First shot out of spec, mold temperature adjusted.' }, insp, s + 5 * MIN);
+        if (k === failFirst) this.inspect(o, k, { type: 'first', items: ok(true).map((x, i) => i === 0 ? { ...x, ok: false, val: 'out of spec' } : x), note: 'First piece groove depth out of spec, die shut height adjusted.' }, insp, s + 5 * MIN);
         this.inspect(o, k, { type: 'first', items: ok(true), note: '' }, insp, s + (k === failFirst ? 18 : 7) * MIN);
       }
       const startQty = k ? null : Math.round(qty * 1.02);

@@ -18,30 +18,18 @@ const SENSOR_TYPES = {
   mtemp: { name: 'Motor temperature', unit: '°C', nom: 58, idle: 31, noise: 0.5, tau: 25, warn: 80, crit: 95, dir: 'hi', dec: 1, fix: 'Clean the motor fan cover, check ventilation and load current.' },
   cur: { name: 'Motor current', unit: 'A', nom: 12, idle: 0.3, noise: 0.45, warn: 16, crit: 19, dir: 'hi', dec: 1, fix: 'Look for mechanical binding, a worn drive or overload.' },
   pwr: { name: 'Power', unit: 'kW', nom: 7.5, idle: 0.6, noise: 0.25, warn: null, crit: null, dir: 'hi', dec: 1 },
-  barrel: { name: 'Barrel temperature', unit: '°C', nom: 230, idle: 205, noise: 1.2, tau: 8, warn: 245, crit: 255, dir: 'hi', dec: 0, fix: 'Check heater bands, thermocouples and the temperature controller.' },
-  mold: { name: 'Mold temperature', unit: '°C', nom: 50, idle: 34, noise: 0.6, tau: 15, warn: 60, crit: 68, dir: 'hi', dec: 1, fix: 'Check the mold temperature controller and descale the cooling channels.' },
-  oil: { name: 'Hydraulic oil temperature', unit: '°C', nom: 45, idle: 33, noise: 0.35, tau: 40, warn: 55, crit: 62, dir: 'hi', dec: 1, fix: 'Clean the oil cooler, check cooling water flow and oil level.' },
-  hyd: { name: 'Hydraulic pressure', unit: 'bar', nom: 140, idle: 4, noise: 3, warn: 165, crit: 180, dir: 'hi', dec: 0, fix: 'Check the relief valve setting and the pump condition.' },
-  air: { name: 'Compressed air pressure', unit: 'bar', nom: 6.2, idle: 6.4, noise: 0.06, warn: 5.5, crit: 5.0, dir: 'lo', dec: 2, fix: 'Check the compressor, air dryer, filter regulator and leaks on the line.' },
-  heat: { name: 'Pleat blade temperature', unit: '°C', nom: 120, idle: 112, noise: 0.8, tau: 6, warn: 135, crit: 145, dir: 'hi', dec: 0, fix: 'Check the blade heater and its controller.' },
-  tension: { name: 'Web tension', unit: 'N', nom: 45, idle: 2, noise: 0.9, warn: 36, crit: 30, dir: 'lo', dec: 1, fix: 'Check the unwind brake, dancer arm and load cell calibration.' },
-  glue: { name: 'Hot-melt glue temperature', unit: '°C', nom: 175, idle: 165, noise: 0.9, tau: 6, warn: 188, crit: 196, dir: 'hi', dec: 0, fix: 'Check the glue tank heater and hose thermostats.' },
-  freq: { name: 'Ultrasonic frequency', unit: 'kHz', nom: 20, idle: 20, noise: 0.012, warn: 19.8, crit: 19.65, dir: 'lo', dec: 2, fix: 'Inspect the horn for cracks or wear and re-tune the generator.' },
-  horn: { name: 'Horn temperature', unit: '°C', nom: 42, idle: 29, noise: 0.5, tau: 12, warn: 60, crit: 70, dir: 'hi', dec: 1, fix: 'Check horn cooling air and booster tightening torque.' },
-  torque: { name: 'Screw torque', unit: '%', nom: 62, idle: 0, noise: 1.6, warn: 85, crit: 95, dir: 'hi', dec: 0, fix: 'Check carbon and binder moisture, feed rate and screw wear.' },
-  die: { name: 'Die pressure', unit: 'bar', nom: 85, idle: 3, noise: 2, warn: 110, crit: 125, dir: 'hi', dec: 0, fix: 'Check the die for blockage and change the screen pack.' },
-  oven: { name: 'Oven temperature', unit: '°C', nom: 230, idle: 210, noise: 1.1, tau: 30, warn: 245, crit: 255, dir: 'hi', dec: 0, fix: 'Check heater elements, the circulation fan and door seals.' },
-  testp: { name: 'Test pressure', unit: 'bar', nom: 8, idle: 0, noise: 0.03, warn: 7.7, crit: 7.4, dir: 'lo', dec: 2, fix: 'Check the pressure regulator and the supply line.' },
-  decay: { name: 'Pressure decay', unit: 'Pa/min', nom: 12, idle: 0, noise: 1.2, warn: 25, crit: 40, dir: 'hi', dec: 1, fix: 'Replace the fixture seals and re-verify with the master leak part.' },
-  rt: { name: 'Room temperature', unit: '°C', nom: 27, noise: 0.15, env: true, wave: 2.5, warn: 32, crit: 35, dir: 'hi', dec: 1, fix: 'Check the air conditioning of the production room.' },
-  rh: { name: 'Room humidity', unit: '%RH', nom: 55, noise: 0.6, env: true, wave: 6, warn: 65, crit: 75, dir: 'hi', dec: 0, fix: 'Check the dehumidifier and keep filter media and carbon sealed.' },
-  pm25: { name: 'Dust PM2.5', unit: 'µg/m³', nom: 12, noise: 1.5, env: true, wave: 3, warn: 25, crit: 35, dir: 'hi', dec: 0, fix: 'Check room pressure, door discipline and the fan filter units.' },
+  oil: { name: 'Lubrication oil temperature', unit: '°C', nom: 45, idle: 33, noise: 0.35, tau: 40, warn: 55, crit: 62, dir: 'hi', dec: 1, fix: 'Clean the oil cooler, check the lubrication pump and oil level.' },
+  hyd: { name: 'Overload hydraulic pressure', unit: 'bar', nom: 140, idle: 4, noise: 3, warn: 165, crit: 180, dir: 'hi', dec: 0, fix: 'Check the overload relief valve setting and the die shut height.' },
+  air: { name: 'Clutch air pressure', unit: 'bar', nom: 5.5, idle: 5.7, noise: 0.06, warn: 4.8, crit: 4.4, dir: 'lo', dec: 2, fix: 'Check the compressor, air dryer, filter regulator and leaks to the clutch valve.' },
+  rt: { name: 'Room temperature', unit: '°C', nom: 27, noise: 0.15, env: true, wave: 2.5, warn: 32, crit: 35, dir: 'hi', dec: 1, fix: 'Check the factory ventilation fans.' },
+  rh: { name: 'Room humidity', unit: '%RH', nom: 55, noise: 0.6, env: true, wave: 6, warn: 65, crit: 75, dir: 'hi', dec: 0, fix: 'Keep steel coils covered and oiled so they do not rust.' },
+  pm25: { name: 'Dust PM2.5', unit: 'µg/m³', nom: 12, noise: 1.5, env: true, wave: 3, warn: 25, crit: 35, dir: 'hi', dec: 0, fix: 'Check the oil mist collectors and keep doors closed.' },
 };
 
 /* sensors and wear counters per machine type; tool.days = calendar days one tool life lasts */
 /* every machine on the floor is a press groove machine, named "No.<n>" as on the customer's layout */
 const MACHINE_KINDS = [
-  { re: /^No\.\s?\d+/i, kind: 'Press groove', pmHours: 500, sensors: { vib: { name: 'Flywheel vibration' }, mtemp: { name: 'Main motor temperature' }, oil: { name: 'Lubrication oil temperature' }, hyd: { name: 'Overload hydraulic pressure' }, pwr: { nom: 11, idle: 1.5 } }, tool: { name: 'Press strokes', event: 'Groove die change', days: 16 } },
+  { re: /^No\.\s?\d+/i, kind: 'Press groove', pmHours: 500, sensors: { vib: { name: 'Flywheel vibration' }, mtemp: { name: 'Main motor temperature' }, oil: {}, hyd: {}, pwr: { nom: 11, idle: 1.5 } }, tool: { name: 'Press strokes', event: 'Groove die change', days: 16 } },
 ];
 const GENERIC_KIND = { kind: 'General machine', pmHours: 400, sensors: { vib: {}, mtemp: {}, cur: {}, pwr: {} }, tool: null };
 const ENV_SENSORS = { rt: {}, rh: {}, pm25: {} };

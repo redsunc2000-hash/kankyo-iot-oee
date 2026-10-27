@@ -174,7 +174,6 @@ function pEnergy() {
   const idlePct = e.kwh ? e.idle / e.kwh : 0;
   const ser = [{ key: 'kw', label: 'Average load', color: '--s-oee' }, { key: 'idleKw', label: 'Load while stopped', color: '--warn' }];
   const yMax = Math.max(1, ...e.buckets.map(b => b.kw)) * 1.15;
-  const short = n => n.replace(/ machine/i, '').replace('Injection', 'Inj.').replace('Assembly', 'Assy').replace('Lamination', 'Lam.').replace('Pressure ', '').replace('Carbon Block ', 'CB ');
   EXPORTS.en = () => exportCSV(`Energy_${scope().name}`, ['Machine', 'kWh', 'On-peak kWh', 'Off-peak kWh', 'kWh while stopped', 'Pieces', 'Wh per piece', 'Peak kW', 'Cost THB'], rows.map(r => [r.m.name, r.kwh.toFixed(2), r.on.toFixed(2), (r.kwh - r.on).toFixed(2), r.idle.toFixed(2), Math.round(r.pcs), r.whpc?.toFixed(1) ?? '', r.peakKW.toFixed(1), r.cost.toFixed(0)]));
   return head('Energy', segBtns('e-range', S.eRange, [['today', 'Today'], ['yesterday', 'Yesterday'], ['7d', 'Last 7 days']]) + (canEdit('energy') ? `<button class="btn" data-act="tariff">${ic('sliders')}Tariff</button>` : ''),
     `From each machine's power meter. TOU: on-peak Mon–Fri 09:00–22:00 at ${fmtNum(tf.on, 2)} THB/kWh, other times ${fmtNum(tf.off, 2)} THB/kWh.`) +
@@ -185,8 +184,8 @@ function pEnergy() {
       ${statTile('Used while stopped', fmtNum(e.idle), `kWh, ${fmtNum(idlePct * 100, 1)}% of total · CO₂ ${fmtNum(e.kwh * tf.ef)} kg`, idlePct > 0.1 ? '--warn' : '--good')}</div>
     <div class="card" style="margin-bottom:20px"><div class="card-head"><h3>Load profile <span class="hint">average kW per ${bucket === HOUR ? 'hour' : '6 hours'}</span></h3>${Charts.legend(ser)}${csvBtn('export', 'en')}</div>${chart(W => Charts.area(e.buckets, ser, { W, H: 240, yMax, pct: false, size: bucket, fmt: v => fmtNum(v) }))}</div>
     <div class="grid g2" style="margin-bottom:20px">
-      <div class="card"><div class="card-head"><h3>Top consumers <span class="hint">kWh</span></h3></div>${chart(W => Charts.bars(rows.slice(0, 6).map(r => ({ label: short(r.m.name), value: r.kwh, color: '--s-oee', tip: `${r.m.name}: ${fmtNum(r.kwh, 1)} kWh` })), { W, fmt: v => fmtNum(v) }))}</div>
-      <div class="card"><div class="card-head"><h3>Energy per piece <span class="hint">Wh per piece</span></h3></div>${chart(W => Charts.bars(rows.filter(r => r.whpc != null).sort((a, b) => b.whpc - a.whpc).slice(0, 6).map(r => ({ label: short(r.m.name), value: r.whpc, color: '--s-p', tip: `${r.m.name}: ${fmtNum(r.whpc, 1)} Wh/pc` })), { W, fmt: v => fmtNum(v) }))}</div></div>
+      <div class="card"><div class="card-head"><h3>Top consumers <span class="hint">kWh</span></h3></div>${chart(W => Charts.bars(rows.slice(0, 6).map(r => ({ label: r.m.name, value: r.kwh, color: '--s-oee', tip: `${r.m.name}: ${fmtNum(r.kwh, 1)} kWh` })), { W, fmt: v => fmtNum(v) }))}</div>
+      <div class="card"><div class="card-head"><h3>Energy per piece <span class="hint">Wh per piece</span></h3></div>${chart(W => Charts.bars(rows.filter(r => r.whpc != null).sort((a, b) => b.whpc - a.whpc).slice(0, 6).map(r => ({ label: r.m.name, value: r.whpc, color: '--s-p', tip: `${r.m.name}: ${fmtNum(r.whpc, 1)} Wh/pc` })), { W, fmt: v => fmtNum(v) }))}</div></div>
     <div class="card"><div class="card-head"><h3>By machine</h3></div>${table('energy', [
       { h: 'Machine', f: r => `<button class="link" data-act="scope-go" data-arg="${r.mid}" data-page="machine_health">${esc(r.m.name)}</button>` }, { h: 'kWh', cls: 'num', f: r => fmtNum(r.kwh, 1) },
       { h: 'On-peak', cls: 'num', f: r => fmtNum(r.on, 1) }, { h: 'Off-peak', cls: 'num', f: r => fmtNum(r.kwh - r.on, 1) },
