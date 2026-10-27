@@ -283,7 +283,7 @@ function renderLogin(err) {
       <div class="field"><label for="lg-pass">Password</label><input class="input" id="lg-pass" type="password" autocomplete="current-password" value="${remembered ? '' : 'admin'}"><div class="err" id="lg-pass-err">${err ? esc(err) : ''}</div></div>
       <label class="check"><input type="checkbox" id="lg-rem" ${remembered ? 'checked' : ''}> Remember me</label>
       <button class="btn primary" type="submit" style="padding:12px">Login</button>
-      <p style="margin:0;font-size:12px;color:var(--faint)">Demo accounts: <span class="mono">admin/admin</span> · <span class="mono">manager/manager</span> · <span class="mono">operator/operator</span><br>MES only: <span class="mono">mes.planner</span> · <span class="mono">mes.op</span> · <span class="mono">mes.op.w</span> · <span class="mono">mes.qc</span> (password = username)</p>
+      <p style="margin:0;font-size:12px;color:var(--faint)">Demo accounts: <span class="mono">admin/admin</span> · <span class="mono">manager/manager</span> · <span class="mono">operator/operator</span><br>MES only: <span class="mono">mes.planner</span> · <span class="mono">mes.op</span> ·<span class="mono">mes.qc</span> (password = username)</p>
     </form></div></main>`;
   document.getElementById('login-form').addEventListener('submit', e => {
     e.preventDefault();
@@ -468,7 +468,7 @@ function pLayout() {
   const items = ms.map(m => { const c = calc(m.id, f, t, S.onlyJob); return { m, c, sv: machineSeverity(m, c) }; });
   const count = k => items.filter(x => x.sv.k === k).length;
   const node = ({ m, c, sv }) => `<button class="lay-node fl sv-${sv.k} ${S.layoutFull ? '' : 'min'} ${m.id === S.assetId ? 'sel' : ''}" style="grid-row:${m.pos.row};grid-column:${m.pos.col}" data-act="scope" data-arg="${m.id}" title="${esc(m.name)} · ${esc(sv.why)}">
-      <div class="hd"><span class="nm">${esc(m.name.replace(/^Press Groove\s*/i, ''))}</span><span class="sv-tag">${SEV_LABEL[sv.k]}</span></div>
+      <div class="hd"><span class="nm">${esc(m.name)}</span><span class="sv-tag">${SEV_LABEL[sv.k]}</span></div>
       <div class="oee">OEE <b style="color:var(${Charts.levelVar(c.OEE)})">${fmtPct(c.OEE)}</b></div>
       <div class="kv"><span>A <b>${fmtPct(c.A)}</b></span><span>P <b>${fmtPct(c.P)}</b></span><span>Q <b>${fmtPct(c.Q)}</b></span></div>
       <div class="bar"><i style="width:${Math.min(100, (c.OEE || 0) * 100)}%;background:var(${Charts.levelVar(c.OEE)})"></i></div></button>`;

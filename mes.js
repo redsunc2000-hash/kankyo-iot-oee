@@ -40,15 +40,13 @@ const Mes = {
       { id: 'mesplp', name: 'MES Planner parent', parentId: null, menu: mesMenu(['view', 'edit', 'edit', 'view', 'edit', 'view', 'view', 'view', 'edit']), assets: {} },
       { id: 'mespl', name: 'MES Planner', parentId: 'mesplp', menu: {}, assets: { p1: 'edit' } },
       { id: 'mesopp', name: 'MES Operator parent', parentId: null, menu: mesMenu(['view', 'view', 'view', 'edit', 'view', 'view', 'edit', 'view', 'deny']), assets: {} },
-      { id: 'mesopa', name: 'MES Operator air filter line', parentId: 'mesopp', menu: {}, assets: { p1: 'view', zs: 'deny', zn: 'edit' } },
-      { id: 'mesopw', name: 'MES Operator water filter line', parentId: 'mesopp', menu: {}, assets: { p1: 'view', zn: 'deny', zs: 'edit' } },
+      { id: 'mesopa', name: 'MES Operator Groove Machine 1', parentId: 'mesopp', menu: {}, assets: { p1: 'view', gm1: 'edit' } },
       { id: 'mesqcp', name: 'MES Quality parent', parentId: null, menu: mesMenu(['view', 'view', 'deny', 'view', 'edit', 'view', 'edit', 'deny', 'view']), assets: {} },
       { id: 'mesqc', name: 'MES QC inspector', parentId: 'mesqcp', menu: {}, assets: { p1: 'edit' } },
     ];
     const users = [
       { id: 'u6', username: 'mes.planner', password: 'mes.planner', fullName: 'Kanokwan R.', email: 'kanokwan@kankyo-solutions.example', roleId: 'mespl', active: true },
       { id: 'u7', username: 'mes.op', password: 'mes.op', fullName: 'Kittipong W.', email: 'kittipong@kankyo-solutions.example', roleId: 'mesopa', active: true },
-      { id: 'u8', username: 'mes.op.w', password: 'mes.op.w', fullName: 'Wichai S.', email: 'wichai@kankyo-solutions.example', roleId: 'mesopw', active: true },
       { id: 'u9', username: 'mes.qc', password: 'mes.qc', fullName: 'Duangjai P.', email: 'duangjai@kankyo-solutions.example', roleId: 'mesqc', active: true },
     ];
     roles.forEach(r => { if (!c.roles.some(x => x.id === r.id)) c.roles.push({ ...st, ...r }); });
@@ -60,79 +58,63 @@ const Mes = {
   seedMaster() {
     const M = (id, code, name, unit, min) => ({ id, code, name, unit, min });
     const materials = [
-      M('mt1', 'MED-HEPA-H13', 'HEPA H13 glass-fibre media', 'm²', 400), M('mt2', 'ADH-HM-01', 'Hot-melt adhesive', 'kg', 40),
-      M('mt3', 'RES-PP-BLK', 'PP resin, black', 'kg', 300), M('mt4', 'GSK-EPDM-10', 'EPDM gasket strip 10 mm', 'm', 800),
-      M('mt5', 'CRB-ACT-12', 'Activated carbon powder', 'kg', 150), M('mt6', 'BND-PE-01', 'PE binder', 'kg', 60),
-      M('mt7', 'MEM-RO-75', 'RO membrane sheet', 'm²', 150), M('mt8', 'RES-ABS-WHT', 'ABS resin, white', 'kg', 200),
-      M('mt9', 'ORG-NBR-30', 'NBR O-ring 30 mm', 'pcs', 800), M('mt10', 'MED-SYN-G4', 'Synthetic G4 media', 'm²', 300),
+      M('mt1', 'COIL-SPCC-08', 'SPCC steel coil 0.8 mm', 'kg', 800), M('mt2', 'OIL-PRS-01', 'Press forming oil', 'L', 40),
+      M('mt3', 'COIL-SGCC-10', 'Galvanised steel coil 1.0 mm', 'kg', 800), M('mt4', 'BOX-50', 'Carton box, 50 pcs', 'pcs', 200),
+      M('mt5', 'SHT-SUS-06', 'SUS304 sheet 0.6 mm', 'kg', 300), M('mt6', 'BAG-PE-01', 'PE bag', 'pcs', 2000),
     ];
     const cyc = mid => Math.round(3600 / DB.asset(mid).rate * 10) / 10;
     const O = (seq, name, mids, setupMin, inspect, checks, instruction) => ({ seq, name, mids, cycleSec: cyc(mids[0]), setupMin, inspect, checks: checks.map(([n, s]) => ({ name: n, spec: s })), instruction });
+    const pg = (...ns) => ns.map(n => `pg${n}`);
     const products = [
-      { id: 'pr1', code: 'AP-HEPA-H13-400', name: 'HEPA filter H13 400×400', lineId: 'ln', unit: 'pcs', routing: [
-        O(10, 'Media cutting', ['m4'], 15, '', [], 'Load the H13 media roll with the printed side up. Cut length 2,350 mm ±2. Check the first 3 cuts with the steel rule.'),
-        O(20, 'Pleating', ['m2'], 20, 'first', [['Pleat height', '45 ±0.5 mm'], ['Pleat count', '78 pleats'], ['No media cracks', 'visual']], 'Set pleat height 45 mm, 78 pleats per pack. Keep media tension 1.2–1.5 bar.'),
-        O(30, 'Lamination', ['m3'], 15, '', [], 'Hot-melt bead on both sides of the pack, glue temp 175 °C. Check the bead is continuous.'),
-        O(40, 'Frame injection', ['m5', 'm6'], 25, 'first', [['Frame flatness', '≤ 0.8 mm'], ['No short shot', 'visual'], ['Corner weld line', 'visual']], 'Use mold FR-400. Barrel 210/220/225 °C, cycle 12 s. Remove sprue before the frame cools.'),
-        O(50, 'Ultrasonic welding', ['m7'], 10, '', [], 'Weld the pack into the frame, amplitude 80 %, weld time 0.6 s. Peel-test 1 piece per 100.'),
-        O(60, 'Final assembly', ['m1'], 10, 'final', [['Gasket fitted all round', 'visual'], ['Label and lot number', 'readable'], ['Pressure drop at 0.5 m/s', '≤ 250 Pa']], 'Fit the gasket strip, apply the lot label, pack 4 per carton.'),
-      ], bom: [{ matId: 'mt1', qtyPer: 0.9, seq: 10 }, { matId: 'mt2', qtyPer: 0.05, seq: 30 }, { matId: 'mt3', qtyPer: 0.35, seq: 40 }, { matId: 'mt4', qtyPer: 1.6, seq: 60 }] },
-      { id: 'pr3', code: 'AP-PRE-G4-400', name: 'Pre-filter G4 400×400', lineId: 'ln', unit: 'pcs', routing: [
-        O(10, 'Media cutting', ['m4'], 10, '', [], 'Load the G4 synthetic media. Cut length 1,600 mm ±3.'),
-        O(20, 'Pleating', ['m2'], 15, 'first', [['Pleat height', '25 ±0.5 mm'], ['Pleat count', '48 pleats']], 'Set pleat height 25 mm, 48 pleats per pack.'),
-        O(40, 'Frame injection', ['m5', 'm6'], 25, '', [], 'Use mold FR-400. Barrel 205/215/220 °C.'),
-        O(60, 'Final assembly', ['m1'], 10, 'final', [['Gasket fitted all round', 'visual'], ['Label and lot number', 'readable']], 'Fit the gasket strip, label, pack 6 per carton.'),
-      ], bom: [{ matId: 'mt10', qtyPer: 0.8, seq: 10 }, { matId: 'mt3', qtyPer: 0.3, seq: 40 }, { matId: 'mt4', qtyPer: 1.6, seq: 60 }] },
-      { id: 'pr2', code: 'WC-CB-10', name: 'Carbon block cartridge 10"', lineId: 'ls', unit: 'pcs', routing: [
-        O(10, 'Carbon block extrusion', ['m9'], 30, 'first', [['Block OD', '62 ±0.3 mm'], ['Block length', '248 ±1 mm'], ['No cracks', 'visual']], 'Mix carbon and binder 5 : 1. Die temp 190 °C. Cut every 248 mm.'),
-        O(20, 'Core sintering', ['m11'], 20, '', [], 'Oven profile S-2: 210 °C for 18 min. Load 40 blocks per tray.'),
-        O(30, 'Membrane winding', ['m10'], 15, '', [], 'Wind 2 layers of RO membrane. Tension 18 N. Seal the overlap with tape.'),
-        O(40, 'Housing injection', ['m12', 'm13'], 25, 'first', [['Thread gauge', 'GO / NO-GO pass'], ['Wall thickness', '2.0 ±0.15 mm'], ['No sink marks', 'visual']], 'Use mold HS-10. Barrel 230/240/245 °C, cycle 12 s.'),
-        O(50, 'Cartridge assembly', ['m8'], 10, '', [], 'Fit 2 O-rings and the end caps. Torque 4 N·m.'),
-        O(60, 'Pressure leak test', ['m14'], 10, 'final', [['Leak rate at 6 bar', '≤ 0.5 cc/min'], ['Burst sample', '≥ 12 bar (1 per lot)'], ['Label and lot number', 'readable']], 'Test every cartridge at 6 bar for 20 s. Rejects go to the red bin.'),
-      ], bom: [{ matId: 'mt5', qtyPer: 0.4, seq: 10 }, { matId: 'mt6', qtyPer: 0.08, seq: 10 }, { matId: 'mt7', qtyPer: 0.6, seq: 30 }, { matId: 'mt8', qtyPer: 0.3, seq: 40 }, { matId: 'mt9', qtyPer: 2, seq: 50 }] },
+      { id: 'pr1', code: 'GP-A100', name: 'Groove plate A100', lineId: 'gm1', unit: 'pcs', routing: [
+        O(10, 'Groove pressing, 1st stage', pg(1, 2, 3, 4, 5, 6), 20, 'first', [['Groove depth', '1.2 ±0.05 mm'], ['Groove pitch', '8.0 ±0.1 mm'], ['No burr on the groove edge', 'visual']], 'Load SPCC 0.8 mm blanks, oiled side up. Die GRV-A1, 1 hit per piece. Check the first 3 pieces with the depth gauge.'),
+        O(20, 'Groove pressing, 2nd stage (sizing)', pg(7, 8, 9, 10), 15, 'final', [['Flatness', '≤ 0.5 mm'], ['Label and lot number', 'readable']], 'Die GRV-A2 sizing hit. Stack 50 per carton with the lot label.'),
+      ], bom: [{ matId: 'mt1', qtyPer: 0.12, seq: 10 }, { matId: 'mt2', qtyPer: 0.002, seq: 10 }, { matId: 'mt4', qtyPer: 0.02, seq: 20 }] },
+      { id: 'pr3', code: 'GP-B200', name: 'Groove plate B200, galvanised', lineId: 'gm1', unit: 'pcs', routing: [
+        O(10, 'Groove pressing, 1st stage', pg(46, 47, 48, 49, 50), 20, 'first', [['Groove depth', '1.5 ±0.05 mm'], ['No zinc flaking', 'visual']], 'Load SGCC 1.0 mm blanks. Die GRV-B1.'),
+        O(20, 'Groove pressing, 2nd stage (sizing)', pg(51, 52, 53), 15, 'final', [['Flatness', '≤ 0.5 mm'], ['Label and lot number', 'readable']], 'Die GRV-B2 sizing hit. Pack 50 per carton.'),
+      ], bom: [{ matId: 'mt3', qtyPer: 0.18, seq: 10 }, { matId: 'mt2', qtyPer: 0.002, seq: 10 }, { matId: 'mt4', qtyPer: 0.02, seq: 20 }] },
+      { id: 'pr2', code: 'SP-K303', name: 'Stainless groove clip K303', lineId: 'gm1', unit: 'pcs', routing: [
+        O(10, 'Pressing on KUMPSP-303', pg(74, 75, 76, 77), 20, 'first', [['Clip width', '12.0 ±0.1 mm'], ['Groove depth', '0.8 ±0.05 mm'], ['No cracks at the bend', 'visual']], 'Load SUS304 0.6 mm strip. Die K3-1. Check the first 5 pieces.'),
+        O(20, 'Second hit and bagging', pg(78, 79, 80), 10, 'final', [['Clip opens and closes', '10 cycles, no crack'], ['Label and lot number', 'readable']], 'Die K3-2. Bag 100 per PE bag.'),
+      ], bom: [{ matId: 'mt5', qtyPer: 0.05, seq: 10 }, { matId: 'mt6', qtyPer: 0.01, seq: 20 }] },
     ];
     const skills = {
-      'mes.op': { Cutting: 3, Pleating: 2, Lamination: 2, 'Injection molding': 2, 'Ultrasonic welding': 1, Assembly: 2 },
-      'mes.op.w': { Extrusion: 2, 'Sintering oven': 2, Winding: 2, 'Injection molding': 1, Assembly: 2, 'Leak testing': 3 },
-      'mes.qc': { 'Leak testing': 2, Assembly: 1 },
+      'mes.op': { 'Press groove': 3 },
+      'mes.qc': { 'Press groove': 1 },
     };
     return { materials, products, orders: [], lots: [], links: [], reports: [], inspections: [], ncrs: [], ships: [], clock: [], skills, events: [], seq: {} };
   },
   seedHistory(now) {
     const ago = h => now - h * HOUR;
-    [['mt1', 500, 96, 'Lydall Filtration', 'LY-24871'], ['mt1', 600, 40, 'Lydall Filtration', 'LY-25012'], ['mt1', 400, 8, 'Lydall Filtration', 'LY-25090'],
-      ['mt2', 50, 96, 'Henkel Thailand', 'HK-7781'], ['mt2', 50, 30, 'Henkel Thailand', 'HK-7802'],
-      ['mt3', 400, 96, 'IRPC', 'PP-11820'], ['mt3', 400, 20, 'IRPC', 'PP-11904'],
-      ['mt4', 1000, 96, 'Siam Rubber', 'SR-5531'], ['mt4', 1500, 30, 'Siam Rubber', 'SR-5560'], ['mt4', 1500, 5, 'Siam Rubber', 'SR-5588'],
-      ['mt5', 300, 90, 'Calgon Carbon', 'CC-90412'], ['mt5', 300, 20, 'Calgon Carbon', 'CC-90477'],
-      ['mt6', 80, 90, 'SCG Chemicals', 'SCG-3371'],
-      ['mt7', 300, 90, 'Toray Membrane', 'TM-60218'], ['mt7', 300, 30, 'Toray Membrane', 'TM-60255'],
-      ['mt8', 300, 90, 'IRPC', 'ABS-2290'], ['mt8', 300, 12, 'IRPC', 'ABS-2317'],
-      ['mt9', 2000, 90, 'NOK Thailand', 'NOK-1140'], ['mt9', 2000, 10, 'NOK Thailand', 'NOK-1162'],
-      ['mt10', 1000, 24, 'Freudenberg', 'FD-88210']]
+    [['mt1', 2000, 96, 'Siam Steel', 'SS-24871'], ['mt1', 2000, 40, 'Siam Steel', 'SS-25012'], ['mt1', 1500, 8, 'Siam Steel', 'SS-25090'],
+      ['mt2', 50, 96, 'Idemitsu Lube', 'IL-7781'], ['mt2', 50, 30, 'Idemitsu Lube', 'IL-7802'],
+      ['mt3', 2000, 96, 'NS BlueScope', 'BS-11820'], ['mt3', 2000, 20, 'NS BlueScope', 'BS-11904'],
+      ['mt4', 500, 96, 'Thai Containers', 'TC-5531'], ['mt4', 500, 5, 'Thai Containers', 'TC-5588'],
+      ['mt5', 600, 90, 'Posco Thainox', 'PT-90412'], ['mt5', 600, 20, 'Posco Thainox', 'PT-90477'],
+      ['mt6', 5000, 90, 'TPBI', 'TP-3371']]
       .forEach(([matId, qty, h, supplier, supLot]) => this.receive({ matId, qty, supplier, supLot, location: 'RM store' }, 'mes.planner', ago(h)));
 
-    const air = { user: 'mes.op', insp: 'mes.qc' }, water = { user: 'mes.op.w', insp: 'mes.qc' };
-    const o1 = this.seedOrder('pr1', 400, ago(30), 'normal', 'Siam Clean Air Co.', { ...air, endAgo: 50, done: 6 });
-    const o2 = this.seedOrder('pr2', 300, ago(12), 'normal', 'AquaPure Distribution', { ...water, endAgo: 30, done: 6, mids: { 3: 'm13' }, failFirst: 3 });
-    const o3 = this.seedOrder('pr1', 600, ago(-14), 'high', 'Siam Clean Air Co.', { ...air, endAgo: 0.3, done: 3, partial: true });
-    this.seedOrder('pr2', 500, ago(-20), 'normal', 'AquaPure Distribution', { ...water, endAgo: 0.5, done: 1, partial: true });
-    this.seedOrder('pr3', 800, ago(-30), 'normal', 'HomeAir Retail', { release: true });
-    this.seedOrder('pr1', 500, ago(-72), 'normal', 'CleanRoom Tech', {});
-    this.seedOrder('pr2', 1200, ago(-40), 'high', 'AquaPure Distribution', {});
+    const crew = { user: 'mes.op', insp: 'mes.qc' };
+    const o1 = this.seedOrder('pr1', 4000, ago(30), 'normal', 'Siam Clean Air Co.', { ...crew, endAgo: 50, done: 2 });
+    const o2 = this.seedOrder('pr2', 3000, ago(12), 'normal', 'AquaPure Distribution', { ...crew, endAgo: 30, done: 2, failFirst: 0 });
+    const o3 = this.seedOrder('pr1', 6000, ago(-14), 'high', 'Siam Clean Air Co.', { ...crew, endAgo: 0.3, done: 1, partial: true });
+    this.seedOrder('pr2', 5000, ago(-20), 'normal', 'AquaPure Distribution', { ...crew, endAgo: 0.5, done: 0, partial: true });
+    this.seedOrder('pr3', 8000, ago(-30), 'normal', 'HomeAir Retail', { release: true });
+    this.seedOrder('pr1', 5000, ago(-72), 'normal', 'CleanRoom Tech', {});
+    this.seedOrder('pr2', 12000, ago(-40), 'high', 'AquaPure Distribution', {});
 
     this.close(o1, 'mes.planner', ago(46));
-    this.c.lots.filter(l => l.kind === 'fg' && l.orderId === o1.id).forEach((l, i) => this.ship(l, i ? 100 : l.qty, 'Siam Clean Air Co.', 'mes.planner', ago(40 - i)));
+    this.c.lots.filter(l => l.kind === 'fg' && l.orderId === o1.id).forEach((l, i) => this.ship(l, i ? 1000 : l.qty, 'Siam Clean Air Co.', 'mes.planner', ago(40 - i)));
     const fg2 = this.c.lots.filter(l => l.kind === 'fg' && l.orderId === o2.id);
     this.ship(fg2[0], fg2[0].qty, 'AquaPure Distribution', 'mes.planner', ago(20));
-    const n1 = this.raiseNcr({ lotId: fg2[fg2.length - 1].id, qty: 6, defect: 'q4', desc: 'Scratches on the housing found at packing.' }, 'mes.qc', ago(26));
-    this.dispose(n1, 'scrap', 'Scratched housings scrapped. Mold HS-10 cavity 2 polished.', 'mes.qc', ago(24));
-    const adh = this.c.lots.find(l => l.matId === 'mt2' && l.status === 'available' && l.at < ago(90));
-    if (adh) { const n2 = this.raiseNcr({ lotId: adh.id, qty: Math.min(5, adh.qty), defect: 'q1', desc: 'Viscosity out of spec on the supplier CoA (8,900 cP, spec 6,000–8,000).' }, 'mes.qc', ago(34)); this.dispose(n2, 'return', 'Returned to Henkel, credit note requested.', 'mes.qc', ago(33)); }
-    const held = this.c.lots.filter(l => l.orderId === o3.id && l.seq === 30 && l.status === 'available').pop();
-    if (held) this.raiseNcr({ lotId: held.id, qty: Math.min(20, held.qty), defect: 'q1', desc: 'Glue bead skips on one side of the pack, about 20 pieces.' }, 'mes.qc', ago(0.6));
-    this.clockIn('mes.qc', 'm14', ago(2));
+    const n1 = this.raiseNcr({ lotId: fg2[fg2.length - 1].id, qty: 60, defect: 'q4', desc: 'Scratches on the top surface found at packing.' }, 'mes.qc', ago(26));
+    this.dispose(n1, 'scrap', 'Scratched clips scrapped. Die K3-2 polished.', 'mes.qc', ago(24));
+    const oil = this.c.lots.find(l => l.matId === 'mt2' && l.status === 'available' && l.at < ago(90));
+    if (oil) { const n2 = this.raiseNcr({ lotId: oil.id, qty: Math.min(5, oil.qty), defect: 'q1', desc: 'Viscosity out of spec on the supplier CoA (52 cSt, spec 40–48).' }, 'mes.qc', ago(34)); this.dispose(n2, 'return', 'Returned to Idemitsu, credit note requested.', 'mes.qc', ago(33)); }
+    const held = this.c.lots.filter(l => l.orderId === o3.id && l.seq === 10 && l.status === 'available').pop();
+    if (held) this.raiseNcr({ lotId: held.id, qty: Math.min(200, held.qty), defect: 'q1', desc: 'Groove depth shallow on one side, about 200 pieces.' }, 'mes.qc', ago(0.6));
+    this.clockIn('mes.qc', 'pg78', ago(2));
   },
   seedOrder(productId, qty, due, priority, customer, { user, insp, endAgo = 0, done = 0, partial = false, mids = {}, failFirst = -1, release = false }) {
     const now = Date.now(); const p = this.product(productId);

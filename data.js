@@ -9,7 +9,7 @@
 'use strict';
 
 const HOUR = 3600e3, DAY = 864e5, HISTORY_DAYS = 31;
-const STORE_KEY = 'oee-demo-config-v5';
+const STORE_KEY = 'oee-demo-config-v6';
 
 /* ---------- small utils ---------- */
 function mulberry32(a) {
@@ -40,31 +40,10 @@ function seedConfig() {
   const M = (id, name, code, parentId, rate) => ({ id, name, code, parentId, isMachine: true, rate, uom: 'ea' });
   const assets = [
     A('p1', 'Kankyo Solutions', '001', null),
-    A('zn', 'Air Filter Zone', '001_2', 'p1'),
-    A('ln', 'Air Purifier Filter line A', '001_2_1', 'zn'),
-    M('m1', 'Filter Final Assembly machine', '001_2_1_m', 'ln', 180),
-    A('lne', 'Filter media part', '001_2_1_1', 'ln'),
-    M('m2', 'Media Pleating machine', '001_2_1_1_1_m', 'lne', 240),
-    M('m3', 'HEPA Lamination machine', '001_2_1_1_2_m', 'lne', 220),
-    M('m4', 'Media Cutting machine', '001_2_1_1_3_m', 'lne', 200),
-    A('lnm', 'Filter frame part', '001_2_1_2', 'ln'),
-    M('m5', 'Frame Injection machine A', '001_2_1_2_1_m', 'lnm', 300),
-    M('m6', 'Frame Injection machine B', '001_2_1_2_2_m', 'lnm', 300),
-    M('m7', 'Ultrasonic Welding machine', '001_2_1_2_3_m', 'lnm', 160),
-    A('zs', 'Water Filter Zone', '001_1', 'p1'),
-    A('ls', 'Water Cartridge line A', '001_1_1', 'zs'),
-    M('m8', 'Cartridge Assembly machine', '001_1_1_m', 'ls', 180),
-    A('lse', 'Filter core part', '001_1_1_1', 'ls'),
-    M('m9', 'Carbon Block Extruder', '001_1_1_1_1_m', 'lse', 240),
-    M('m10', 'Membrane Winding machine', '001_1_1_1_2_m', 'lse', 220),
-    M('m11', 'Core Sintering machine', '001_1_1_1_3_m', 'lse', 200),
-    A('lsm', 'Housing part', '001_1_1_2', 'ls'),
-    M('m12', 'Housing Injection machine A', '001_1_1_2_1_m', 'lsm', 300),
-    M('m13', 'Housing Injection machine B', '001_1_1_2_2_m', 'lsm', 300),
-    M('m14', 'Pressure Leak Test machine', '001_1_1_2_3_m', 'lsm', 160),
+    A('gm1', 'Groove Machine 1', '001_1', 'p1'),
   ];
-  // Press Groove machines sit straight under the plant (no zone). `pos` places each one on the Plant Layout
-  // floor plan as drawn in the customer's Layout.png: [grid row, first column, machine numbers left to right].
+  // The press groove machines, named as on the customer's Layout.png, all under Groove Machine 1. `pos` places each
+  // one on the Plant Layout floor plan: [grid row, first column, machine numbers left to right].
   // Row 3 is the empty aisle; No.74–80 are the smaller KUMPSP-303 presses.
   const PRESS_FLOOR = [
     [1, 1, [64, 65, 66, 67, 68, 69, 70, 71, 72, 73]],
@@ -77,7 +56,7 @@ function seedConfig() {
     [9, 1, [1, 2, 3, 80, 79, 78, 77, 76, 75, 74]],
   ];
   const presses = PRESS_FLOOR.flatMap(([row, col0, nums]) => nums.map((n, i) => ({
-    ...M(`pg${n}`, `Press Groove No.${n}`, `001_PG_${pad(n)}_m`, 'p1', n >= 74 ? 540 : 720), pos: { row, col: col0 + i }, no: n,
+    ...M(`pg${n}`, `No.${n}`, `001_1_${pad(n)}_m`, 'gm1', n >= 74 ? 540 : 720), pos: { row, col: col0 + i }, no: n,
   })));
   assets.push(...presses.sort((a, b) => a.no - b.no).map(({ no, ...m }) => m));
   const reasons = [
@@ -97,7 +76,7 @@ function seedConfig() {
     { id: 'mgrp', name: 'Manager parent', parentId: null, menu: Object.fromEntries(Object.keys(MENU).map(k => [k, MENU_KEYS[2].items.some(i => i.key === k) ? 'view' : (MENU_KEYS[1].items.some(i => i.key === k) ? 'view' : 'edit')])), assets: {} },
     { id: 'mgr1', name: 'Manager plant 1.1', parentId: 'mgrp', menu: {}, assets: { p1: 'view' } },
     { id: 'opp', name: 'Operator parent', parentId: null, menu: Object.fromEntries(Object.keys(MENU).map(k => [k, MENU_KEYS[2].items.some(i => i.key === k) ? 'deny' : (MENU_KEYS[1].items.some(i => i.key === k) ? 'edit' : 'view')])), assets: {} },
-    { id: 'opn', name: 'Air filter line operator', parentId: 'opp', menu: {}, assets: { p1: 'deny', zn: 'edit' } },
+    { id: 'opn', name: 'Groove Machine 1 operator', parentId: 'opp', menu: {}, assets: { p1: 'deny', gm1: 'edit' } },
     { id: 'mtp', name: 'Maintenance parent', parentId: null, menu: Object.fromEntries(Object.keys(MENU).map(k => [k, k === 'spare_part' || k === 'machine_health' ? 'edit' : MENU_KEYS[2].items.some(i => i.key === k) ? 'deny' : MENU_KEYS[1].items.some(i => i.key === k) ? 'edit' : 'view'])), assets: {} },
     { id: 'mtn', name: 'Maintenance technician', parentId: 'mtp', menu: {}, assets: { p1: 'edit' } },
   ];
@@ -119,7 +98,7 @@ function seedConfig() {
     const tag = `${String(dt.getFullYear()).slice(2)}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}`;
     assets.filter(a => a.isMachine).forEach((m, i) => {
       jobs.push({
-        id: `j${tag}${m.id}`, name: `PO-${tag}-${pad(i + 1)}`, target: m.rate * 16, formula: m.name.replace(/ machine$/, '') + ' std',
+        id: `j${tag}${m.id}`, name: `PO-${tag}-${pad(i + 1)}`, target: m.rate * 16, formula: `Groove ${m.name} std`,
         idealQty: m.rate, idealPer: 1, idealUnit: 'hour', machines: [m.id], finishGood: m.id, priority: i % 4 === 0 ? 'high' : 'normal',
         type: 'auto', start: day + 6 * HOUR, end: day + 22 * HOUR, cavity: 1,
         createdBy: 'admin', createdAt: day - 2 * DAY, updatedBy: 'admin', updatedAt: day - 2 * DAY,
@@ -131,8 +110,8 @@ function seedConfig() {
     { id: 'al2', name: 'Change tool', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r4'], qReasons: [], sendEmail: false, emails: [], sendLine: true, lines: ['ln1'] },
     { id: 'al3', name: 'Work piece stuck', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r3'], qReasons: [], sendEmail: false, emails: [], sendLine: true, lines: ['ln1'] },
     { id: 'al4', name: 'MachineStop', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r1', 'r2'], qReasons: [], sendEmail: false, emails: [], sendLine: false, lines: [] },
-    { id: 'al5', name: 'Top scratched', severity: 'critical', type: 'machine', assetId: 'zn', aTarget: null, pTarget: null, qTarget: null, aReasons: [], qReasons: ['q4'], sendEmail: true, emails: ['qc@kankyo-solutions.example'], sendLine: false, lines: [] },
-    { id: 'al6', name: 'Water Filter Zone OEE below target', severity: 'warning', type: 'machine', assetId: 'zs', aTarget: 85, pTarget: 85, qTarget: 90, aReasons: [], qReasons: [], sendEmail: true, emails: ['plant.manager@kankyo-solutions.example'], sendLine: false, lines: [] },
+    { id: 'al5', name: 'Top scratched', severity: 'critical', type: 'machine', assetId: 'gm1', aTarget: null, pTarget: null, qTarget: null, aReasons: [], qReasons: ['q4'], sendEmail: true, emails: ['qc@kankyo-solutions.example'], sendLine: false, lines: [] },
+    { id: 'al6', name: 'Groove Machine 1 OEE below target', severity: 'warning', type: 'machine', assetId: 'gm1', aTarget: 85, pTarget: 85, qTarget: 90, aReasons: [], qReasons: [], sendEmail: true, emails: ['plant.manager@kankyo-solutions.example'], sendLine: false, lines: [] },
   ];
   const banners = [
     { id: 'b1', fileName: 'superapp-iot-smart-factory.jpg', hue: 214 },
@@ -145,7 +124,7 @@ function seedConfig() {
   ];
   const stamp = { createdBy: 'admin', createdAt: today - 120 * DAY, updatedBy: 'admin', updatedAt: today - 30 * DAY };
   [assets, reasons, roles, users, alarmRules, banners].forEach(list => list.forEach(x => Object.assign(x, { ...stamp, ...x })));
-  return { version: 5, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify, ...Health.seed(assets), ...Maint.seed(assets) };
+  return { version: 6, assets, reasons, roles, users, plans, jobs, alarmRules, banners, lineNotify, ...Health.seed(assets), ...Maint.seed(assets) };
 }
 
 const MENU_KEYS = [
@@ -173,7 +152,7 @@ const DB = {
   cfg: null,
   load() {
     try { const raw = localStorage.getItem(STORE_KEY); if (raw) { this.cfg = JSON.parse(raw); } } catch (e) { /* storage unavailable */ }
-    if (!this.cfg || this.cfg.version !== 5) this.cfg = seedConfig();
+    if (!this.cfg || this.cfg.version !== 6) this.cfg = seedConfig();
     this.index();
   },
   save() { this.index(); try { localStorage.setItem(STORE_KEY, JSON.stringify(this.cfg)); } catch (e) { /* quota or blocked */ } },

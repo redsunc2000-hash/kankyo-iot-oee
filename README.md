@@ -1,6 +1,6 @@
 # Kankyo IoT – Production Monitoring (OEE mock-up)
 
-Interactive mock-up of an OEE (Overall Equipment Effectiveness) monitoring web app for **Kankyo Solutions**, a sample plant with an air filter line and a water filter line. Machine data is simulated in the browser and updates every second, so the app behaves like it is connected to real machines.
+Interactive mock-up of an OEE (Overall Equipment Effectiveness) monitoring web app for **Kankyo Solutions**, a plant with one machine group, **Groove Machine 1**: 70 press groove machines (No.1–No.80) placed on the Plant Layout as on the customer's floor drawing. Machine data is simulated in the browser and updates every second, so the app behaves like it is connected to real machines.
 
 Built with plain **HTML, CSS and JavaScript**. There is no framework, no build step and no backend.
 
@@ -10,11 +10,10 @@ Built with plain **HTML, CSS and JavaScript**. There is no framework, no build s
 |---|---|---|
 | `admin` | `admin` | All modes, all assets |
 | `manager` | `manager` | View mode (edit), Operation and Admin (view only) |
-| `operator` | `operator` | View and Operation, Air Filter Zone only |
+| `operator` | `operator` | View and Operation, Groove Machine 1 only |
 | `maint.tech` | `maint.tech` | Maintenance technician: View, Operation, Machine Health and Spare Part |
 | `mes.planner` | `mes.planner` | MES only: plans and releases orders, dispatch, material, product and routing |
-| `mes.op` | `mes.op` | MES only: shop floor operator, Air Filter Zone (Water Filter Zone hidden) |
-| `mes.op.w` | `mes.op.w` | MES only: shop floor operator, Water Filter Zone (Air Filter Zone hidden) |
+| `mes.op` | `mes.op` | MES only: shop floor operator, Groove Machine 1 |
 | `mes.qc` | `mes.qc` | MES only: inspections, NCR, lot hold and release |
 
 After login, choose **Production Monitoring** or **MES**. The MES accounts only see the MES application, and the older roles (manager, operator, maint.tech) do not see MES. MES pages are separate menu keys in **Admin › Role** (group *MES mode*).
@@ -26,7 +25,7 @@ After login, choose **Production Monitoring** or **MES**. The MES accounts only 
 - **View mode**: Overview, Plant Layout, Availability, Performance, Quality, Benchmark, Job Tracking, Loss, Alarm, Machine Detail, Machine Health, Energy, SPC, Daily Report
 - **Operation mode**: Work Order and Shift Log, turn machines on/off with a reason, count Good/NG parts, edit availability/performance/quality history
 - **Admin mode**: Asset (with CSV import), Role (menu + asset permissions), User, Plan Production (weekly shift + daily override), Reason, Job, Alarm rules, Sensor (limits + maintenance plan), Spare Part, Banner, Line Notify, Access Log
-- **Machine Health**: sensors chosen per machine type (vibration, motor/oil/barrel/mold/oven temperature, current, hydraulic and air pressure, web tension, ultrasonic frequency, pressure decay, power) plus room temperature, humidity and PM2.5 per line; health score, sensor alarms, time-to-limit prediction, PM and tool-wear counters, energy per piece, maintenance log
+- **Machine Health**: press groove sensors (flywheel vibration, main motor and lubrication oil temperature, overload hydraulic pressure, power) plus room temperature, humidity and PM2.5 per machine group; health score, sensor alarms, time-to-limit prediction, PM and tool-wear counters, energy per piece, maintenance log
 - **Work Order (CMMS)**: create from an alarm, Machine Health or a failed checklist item; assign, start, complete with parts used; MTBF and MTTR per machine
 - **Spare Part**: stock, minimum, reserved by open work orders, receive stock; low stock shows on wear warnings
 - **Energy**: kWh, TOU cost, Wh per piece, energy used while stopped, CO₂, load profile (tariff is editable)

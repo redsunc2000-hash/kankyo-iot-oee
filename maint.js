@@ -10,19 +10,10 @@ const WO_TYPE = { corrective: 'Corrective', preventive: 'Preventive', predictive
 const WO_LOG = { corrective: 'repair', preventive: 'pm', predictive: 'repair', inspection: 'inspect' };
 const WO_STATUS = { open: ['Open', 'warn'], assigned: ['Assigned', 'accent'], in_progress: ['In progress', 'accent'], done: ['Done', 'good'], cancelled: ['Cancelled', 'idle'] };
 const WO_PRIO = { low: ['Low', 'idle'], normal: ['Normal', 'idle'], high: ['High', 'warn'], urgent: ['Urgent', 'crit'] };
-const TOOL_PART = { Cutting: 'pt5', Pleating: 'pt6', 'Ultrasonic welding': 'pt7', 'Leak testing': 'pt8', Lamination: 'pt9', Extrusion: 'pt10', Assembly: 'pt11' };
+const TOOL_PART = { 'Press groove': 'pt5' };
 const CHECK_COMMON = ['Safety guards and emergency stop work', 'Area clean and tidy (5S)', 'No air, oil or water leaks', 'No abnormal noise, smell or vibration'];
 const CHECK_KIND = {
-  'Injection molding': ['Mold surface clean, no flash on parts', 'Hydraulic oil level in the green band', 'Mold cooling water flowing'],
-  Pleating: ['Pleat blade clean, no media build-up', 'Media roll aligned on the unwind'],
-  Lamination: ['Glue tank above minimum level', 'Nip rollers clean'],
-  Cutting: ['Blade sharp, no chips', 'Dust extraction running'],
-  'Ultrasonic welding': ['Horn and anvil clean, no cracks', 'First weld passes the peel test'],
-  Extrusion: ['Carbon and binder hopper filled and dry', 'Die face clean'],
-  Winding: ['Membrane guide rollers clean', 'Tension reading in range'],
-  'Sintering oven': ['Oven door seals intact', 'Exhaust fan running'],
-  'Leak testing': ['Master leak part check passes', 'Fixture seals undamaged'],
-  Assembly: ['Gripper pads intact', 'Torque tool inside calibration date'],
+  'Press groove': ['Light curtain stops the ram', 'Ram stops at top dead centre (clutch and brake)', 'Groove die clean, no chips or cracks', 'Lubrication oil above minimum level'],
 };
 const checkItems = mid => [...CHECK_COMMON, ...(CHECK_KIND[machineKind(DB.asset(mid)).kind] || [])];
 
@@ -41,53 +32,53 @@ const Maint = {
     const now = Date.now(); const ago = h => now - h * HOUR;
     const P = (id, code, name, unit, stock, min, cost, kinds, location) => ({ id, code, name, unit, stock, min, cost, kinds, location });
     const parts = [
-      P('pt1', 'BRG-6205-2RS', 'Ball bearing 6205-2RS', 'pcs', 6, 4, 180, ['*'], 'Store A-01'),
-      P('pt2', 'OIL-GBX-220', 'Gear oil ISO VG 220', 'L', 18, 20, 210, ['Extrusion'], 'Oil room'),
-      P('pt3', 'FLT-HYD-10', 'Hydraulic return filter 10 µm', 'pcs', 3, 2, 950, ['Injection molding'], 'Store A-04'),
-      P('pt4', 'OIL-HYD-46', 'Hydraulic oil ISO VG 46', 'L', 60, 40, 95, ['Injection molding'], 'Oil room'),
-      P('pt5', 'BLD-CUT-300', 'Cutting blade 300 mm', 'pcs', 1, 2, 2400, ['Cutting'], 'Store B-02'),
-      P('pt6', 'BLD-PLT-01', 'Pleating knife set', 'set', 2, 1, 5800, ['Pleating'], 'Store B-02'),
-      P('pt7', 'HRN-US-20K', 'Ultrasonic horn 20 kHz, titanium', 'pcs', 0, 1, 38000, ['Ultrasonic welding'], 'Store B-05'),
-      P('pt8', 'SEAL-FX-40', 'Fixture O-ring seal kit', 'kit', 5, 3, 650, ['Leak testing'], 'Store C-01'),
-      P('pt9', 'NZL-HM-08', 'Hot-melt nozzle 0.8 mm', 'pcs', 4, 2, 1200, ['Lamination'], 'Store B-03'),
-      P('pt10', 'SCR-PK-80', 'Screen pack 80 mesh', 'pcs', 12, 10, 150, ['Extrusion'], 'Store C-03'),
-      P('pt11', 'GRP-PAD-S', 'Gripper suction pad', 'pcs', 24, 10, 85, ['Assembly'], 'Store C-02'),
-      P('pt12', 'BLT-V-A42', 'V-belt A42', 'pcs', 3, 2, 320, ['*'], 'Store A-02'),
-      P('pt13', 'HTR-BND-60', 'Heater band 60 mm 400 W', 'pcs', 4, 2, 1450, ['Injection molding', 'Extrusion'], 'Store A-05'),
+      P('pt1', 'BRG-22216-E', 'Flywheel bearing 22216 E', 'pcs', 6, 4, 2800, ['*'], 'Store A-01'),
+      P('pt2', 'OIL-LUB-68', 'Press lubrication oil ISO VG 68', 'L', 18, 20, 120, ['*'], 'Oil room'),
+      P('pt3', 'FLT-LUB-25', 'Lubrication oil filter 25 µm', 'pcs', 3, 2, 650, ['*'], 'Store A-04'),
+      P('pt4', 'OIL-HYD-46', 'Hydraulic oil ISO VG 46 (overload unit)', 'L', 60, 40, 95, ['*'], 'Oil room'),
+      P('pt5', 'DIE-GRV-01', 'Groove die set', 'set', 1, 2, 18500, ['Press groove'], 'Store B-02'),
+      P('pt6', 'PCH-GRV-01', 'Groove punch', 'pcs', 4, 4, 3200, ['Press groove'], 'Store B-02'),
+      P('pt7', 'CLB-LIN-01', 'Clutch / brake lining set', 'set', 0, 1, 9800, ['Press groove'], 'Store B-05'),
+      P('pt8', 'VLV-OVL-01', 'Overload relief valve', 'pcs', 2, 1, 7400, ['Press groove'], 'Store C-01'),
+      P('pt9', 'VLV-SOL-24', 'Clutch solenoid valve 24 VDC', 'pcs', 3, 2, 4200, ['Press groove'], 'Store B-03'),
+      P('pt10', 'SNS-PRX-12', 'Proximity sensor M12 (stroke counter)', 'pcs', 12, 10, 450, ['*'], 'Store C-03'),
+      P('pt11', 'SPR-DIE-25', 'Die spring 25 mm', 'pcs', 24, 10, 85, ['Press groove'], 'Store C-02'),
+      P('pt12', 'BLT-V-B68', 'V-belt B68 (main motor)', 'pcs', 3, 2, 420, ['*'], 'Store A-02'),
+      P('pt13', 'FAN-MTR-01', 'Main motor cooling fan', 'pcs', 4, 2, 1450, ['*'], 'Store A-05'),
       P('pt14', 'FLT-AIR-01', 'Compressed air filter element', 'pcs', 6, 4, 540, ['*'], 'Store A-03'),
     ];
     const W = o => ({ id: uid('wo'), parts: [], assignee: 'maint.tech', alarmId: null, startedAt: null, doneAt: null, result: '', createdBy: 'manager', dueAt: null, ...o });
     const workOrders = [
-      W({ mid: 'm9', title: 'Gearbox vibration rising', type: 'predictive', priority: 'high', status: 'assigned', createdAt: ago(50), dueAt: ago(-30), desc: 'Gearbox vibration keeps rising (bearing wear suspected). Replace the input shaft bearings and change the gear oil at the next planned stop.', parts: [{ id: 'pt1', qty: 2 }, { id: 'pt2', qty: 6 }] }),
-      W({ mid: 'm4', title: 'Blade change, cut count over limit', type: 'preventive', priority: 'high', status: 'in_progress', createdAt: ago(5), startedAt: ago(0.6), dueAt: ago(-3), desc: 'Blade cut counter passed the limit. Change the blade and check the cut edge on the first 20 pieces.', parts: [{ id: 'pt5', qty: 1 }] }),
-      W({ mid: 'm13', title: '400 h preventive maintenance', type: 'preventive', priority: 'normal', status: 'open', assignee: null, createdAt: ago(20), dueAt: ago(4), desc: 'Lubrication, hydraulic filter, heater bands and thermocouples.', parts: [{ id: 'pt3', qty: 1 }] }),
-      W({ mid: 'm7', title: 'Ultrasonic frequency drifting low', type: 'predictive', priority: 'normal', status: 'open', assignee: null, createdAt: ago(9), dueAt: ago(-72), desc: 'Generator frequency is trending down. Inspect the horn for cracks. No spare horn in store, raise a purchase request.' }),
+      W({ mid: 'pg12', title: 'Flywheel vibration rising', type: 'predictive', priority: 'high', status: 'assigned', createdAt: ago(50), dueAt: ago(-30), desc: 'Flywheel vibration keeps rising (bearing wear suspected). Replace the flywheel bearings and change the lubrication oil at the next planned stop.', parts: [{ id: 'pt1', qty: 2 }, { id: 'pt2', qty: 6 }] }),
+      W({ mid: 'pg64', title: 'Groove die change, stroke count over limit', type: 'preventive', priority: 'high', status: 'in_progress', createdAt: ago(5), startedAt: ago(0.6), dueAt: ago(-3), desc: 'Stroke counter passed the die limit. Change the groove die set and check groove depth on the first 20 pieces.', parts: [{ id: 'pt5', qty: 1 }] }),
+      W({ mid: 'pg20', title: '500 h preventive maintenance', type: 'preventive', priority: 'normal', status: 'open', assignee: null, createdAt: ago(20), dueAt: ago(4), desc: 'Lubrication, oil filter, clutch and brake check, gib clearance.', parts: [{ id: 'pt3', qty: 1 }] }),
+      W({ mid: 'pg33', title: 'Overload pressure creeping up', type: 'predictive', priority: 'normal', status: 'open', assignee: null, createdAt: ago(9), dueAt: ago(-72), desc: 'Overload hydraulic pressure is trending up. Inspect the relief valve. No spare clutch lining in store, raise a purchase request.' }),
     ];
-    [['m2', 'corrective', 'Pleat knife jammed', 'Cleared the jam and reset the knife gap.', 480, 45, null, 0],
-      ['m5', 'corrective', 'Heater band failure, zone 2', 'Replaced the zone 2 heater band and checked the thermocouple.', 360, 95, 'pt13', 1],
-      ['m10', 'inspection', 'Monthly inspection', 'All OK. Guide rollers cleaned.', 290, 40, null, 0],
-      ['m14', 'corrective', 'Fixture seal leaking', 'Replaced the O-ring kit. Master leak check passed.', 215, 35, 'pt8', 1],
-      ['m8', 'preventive', 'Gripper pad replacement', 'Replaced 8 suction pads.', 140, 50, 'pt11', 8],
-      ['m12', 'corrective', 'Hydraulic hose weeping', 'Tightened the fitting, cleaned the spill, topped up oil.', 75, 70, 'pt4', 10],
-      ['m3', 'preventive', 'Glue nozzle cleaning', 'Nozzles cleaned, one replaced.', 30, 30, 'pt9', 1]]
+    [['pg7', 'corrective', 'Work piece jammed in the die', 'Cleared the jam and reset the stripper plate.', 480, 45, null, 0],
+      ['pg5', 'corrective', 'Clutch solenoid valve failure', 'Replaced the clutch solenoid valve and tested single stroke.', 360, 95, 'pt9', 1],
+      ['pg41', 'inspection', 'Monthly inspection', 'All OK. Gib clearance adjusted.', 290, 40, null, 0],
+      ['pg74', 'corrective', 'Stroke counter not counting', 'Replaced the proximity sensor. Counter checked against 50 strokes.', 215, 35, 'pt10', 1],
+      ['pg26', 'preventive', 'Die spring replacement', 'Replaced 8 die springs.', 140, 50, 'pt11', 8],
+      ['pg55', 'corrective', 'Hydraulic hose weeping', 'Tightened the fitting, cleaned the spill, topped up oil.', 75, 70, 'pt4', 10],
+      ['pg18', 'preventive', 'Groove punch change', 'Punch worn, one replaced.', 30, 30, 'pt6', 1]]
       .forEach(([mid, type, title, result, h, dur, pid, qty]) => workOrders.push(W({ mid, type, title, result, priority: 'normal', status: 'done', createdAt: ago(h + 2), startedAt: ago(h), doneAt: ago(h) + dur * MIN, dueAt: ago(h - 24), desc: title + '.', parts: pid ? [{ id: pid, qty }] : [] })));
     workOrders.sort((a, b) => a.createdAt - b.createdAt);
     const seq = {}; workOrders.forEach(w => { const tag = woTag(w.createdAt); seq[tag] = (seq[tag] || 0) + 1; w.no = `WO-${tag}-${String(seq[tag]).padStart(3, '0')}`; });
 
     const checks = [];
     const machines = assets.filter(a => a.isMachine);
-    const ng = { m9: ['No abnormal noise, smell or vibration', 'Gearbox louder than last week.'], m14: ['Fixture seals undamaged', 'Small cut on the upper seal.'] };
+    const ng = { pg12: ['No abnormal noise, smell or vibration', 'Flywheel louder than last week.'], pg74: ['Groove die clean, no chips or cracks', 'Small chip on the die edge.'] };
     const prev = shiftAt(now - 12 * HOUR), cur = shiftAt(now);
     machines.forEach((m, i) => {
-      const mk = (sh, at) => ({ id: uid('ck'), mid: m.id, shift: sh.key, at, by: DB_isAir(m, assets) ? 'operator' : 'qc.lead', items: [...CHECK_COMMON, ...(CHECK_KIND[machineKind(m).kind] || [])].map(text => ({ text, ok: !(ng[m.id] && ng[m.id][0] === text) })), note: ng[m.id]?.[1] || '' });
+      const mk = (sh, at) => ({ id: uid('ck'), mid: m.id, shift: sh.key, at, by: i % 2 ? 'qc.lead' : 'operator', items: [...CHECK_COMMON, ...(CHECK_KIND[machineKind(m).kind] || [])].map(text => ({ text, ok: !(ng[m.id] && ng[m.id][0] === text) })), note: ng[m.id]?.[1] || '' });
       checks.push(mk(prev, prev.start + (20 + i * 4) * MIN));
       if (i % 2 === 0 && now - cur.start > HOUR) checks.push(mk(cur, cur.start + (15 + i * 3) * MIN));
     });
     const notes = [
-      ['Line ran steady. Extruder gearbox is louder than usual, maintenance has a work order.', 'Watch the extruder gearbox vibration.'],
-      ['Media cutting blade close to its limit and only 1 spare blade in store.', 'Purchasing to order cutting blades.'],
-      ['Cartridge assembly stopped twice for work piece stuck, cleared by operator.', ''],
-      ['Leak tester gave 3 false rejects. Master part check OK after seal check.', 'Re-check leak tester seals at start of shift.'],
+      ['Groove Machine 1 ran steady. No.12 flywheel is louder than usual, maintenance has a work order.', 'Watch the No.12 flywheel vibration.'],
+      ['No.64 groove die close to its stroke limit and only 1 spare die set in store.', 'Purchasing to order groove die sets.'],
+      ['No.7 stopped twice for work piece stuck in the die, cleared by operator.', ''],
+      ['No.74 stroke counter missed counts. Proximity sensor replaced.', 'Check counter against strokes at start of shift.'],
     ];
     const handovers = notes.map(([note, issues], k) => { const sh = shiftAt(now - 12 * HOUR * (k + 1)); return { id: uid('ho'), shift: sh.key, at: sh.end - 12 * MIN, by: k % 2 ? 'qc.lead' : 'manager', scopeId: 'p1', note, issues }; });
     return { parts, workOrders, checks, handovers, tariff: { on: 4.18, off: 2.6, ef: 0.5 } };
@@ -132,7 +123,6 @@ const Maint = {
   },
 };
 function woTag(t) { const d = new Date(t); return `${String(d.getFullYear()).slice(2)}${pad(d.getMonth() + 1)}`; }
-function DB_isAir(m, assets) { let a = m; while (a) { if (a.id === 'zn') return true; a = assets.find(x => x.id === a.parentId); } return false; }
 
 /* ---------- energy (from each machine's power sensor) ---------- */
 const Energy = {

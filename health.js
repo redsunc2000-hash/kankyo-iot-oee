@@ -1,10 +1,10 @@
 /* ==========================================================================
    OEE demo — machine health (condition monitoring)
-   - Every machine gets the sensors that fit its type (injection, pleating…),
-     every line gets room sensors (temperature, humidity, PM2.5).
+   - Every machine gets the sensors that fit its type (press groove),
+     every machine group gets room sensors (temperature, humidity, PM2.5).
    - 7 days of per-minute history is generated from the machine's run/stop
      history, then the live loop adds a reading every second.
-   - A few machines carry slow wear (bearing, oil cooler, horn, seals) so the
+   - A few machines carry slow wear (bearing, oil cooler, valve, motor fan) so the
      trend, the time-to-limit prediction and the alarms have a story to show.
    ========================================================================== */
 'use strict';
@@ -39,31 +39,21 @@ const SENSOR_TYPES = {
 };
 
 /* sensors and wear counters per machine type; tool.days = calendar days one tool life lasts */
+/* every machine on the floor is a press groove machine, named "No.<n>" as on the customer's layout */
 const MACHINE_KINDS = [
-  { re: /injection/i, kind: 'Injection molding', pmHours: 400, sensors: { vib: { name: 'Pump motor vibration' }, oil: {}, hyd: {}, barrel: {}, mold: {}, pwr: { nom: 18, idle: 3 } }, tool: { name: 'Mold shots', event: 'Mold service', days: 20 } },
-  { re: /pleat/i, kind: 'Pleating', pmHours: 400, sensors: { vib: {}, mtemp: {}, heat: {}, tension: {}, air: {}, pwr: { nom: 5.5 } }, tool: { name: 'Blade strokes', event: 'Blade change', days: 14 } },
-  { re: /laminat/i, kind: 'Lamination', pmHours: 400, sensors: { vib: {}, mtemp: {}, glue: {}, tension: {}, pwr: { nom: 9, idle: 2 } }, tool: { name: 'Laminated pieces', event: 'Glue nozzle cleaning', days: 10 } },
-  { re: /cutting/i, kind: 'Cutting', pmHours: 400, sensors: { vib: { name: 'Spindle vibration' }, cur: {}, mtemp: {}, air: {}, pwr: { nom: 4 } }, tool: { name: 'Blade cuts', event: 'Blade change', days: 8 } },
-  { re: /ultrasonic/i, kind: 'Ultrasonic welding', pmHours: 400, sensors: { freq: {}, horn: {}, air: {}, pwr: { nom: 3.2, idle: 0.3 } }, tool: { name: 'Weld cycles', event: 'Horn service', days: 18 } },
-  { re: /extrud/i, kind: 'Extrusion', pmHours: 400, sensors: { vib: { name: 'Gearbox vibration' }, barrel: { nom: 205, idle: 185, warn: 220, crit: 230 }, torque: {}, die: {}, mtemp: {}, pwr: { nom: 22, idle: 4 } }, tool: { name: 'Extruded blocks', event: 'Screen pack change', days: 12 } },
-  { re: /winding/i, kind: 'Winding', pmHours: 400, sensors: { tension: { nom: 38, warn: 31, crit: 26 }, vib: {}, cur: { nom: 8, warn: 11, crit: 13 }, mtemp: {}, pwr: { nom: 4.5 } }, tool: { name: 'Wound elements', event: 'Guide roller cleaning', days: 15 } },
-  { re: /sinter/i, kind: 'Sintering oven', pmHours: 450, sensors: { oven: {}, vib: { name: 'Exhaust fan vibration' }, cur: { name: 'Fan motor current', nom: 9, warn: 12, crit: 14 }, pwr: { nom: 35, idle: 20 } }, tool: null },
-  { re: /leak/i, kind: 'Leak testing', pmHours: 400, sensors: { testp: {}, decay: {}, air: {}, pwr: { nom: 1.5, idle: 0.4 } }, tool: { name: 'Test cycles', event: 'Fixture seal change', days: 12 } },
-  { re: /press groove/i, kind: 'Press', pmHours: 500, sensors: { vib: { name: 'Flywheel vibration' }, oil: {}, hyd: {}, pwr: { nom: 11, idle: 1.5 } }, tool: { name: 'Press strokes', event: 'Groove die change', days: 16 } },
-  { re: /assembl/i, kind: 'Assembly', pmHours: 400, sensors: { air: {}, vib: { name: 'Conveyor vibration' }, cur: {}, mtemp: {}, pwr: { nom: 6 } }, tool: { name: 'Assembly cycles', event: 'Gripper service', days: 21 } },
+  { re: /^No\.\s?\d+/i, kind: 'Press groove', pmHours: 500, sensors: { vib: { name: 'Flywheel vibration' }, mtemp: { name: 'Main motor temperature' }, oil: { name: 'Lubrication oil temperature' }, hyd: { name: 'Overload hydraulic pressure' }, pwr: { nom: 11, idle: 1.5 } }, tool: { name: 'Press strokes', event: 'Groove die change', days: 16 } },
 ];
 const GENERIC_KIND = { kind: 'General machine', pmHours: 400, sensors: { vib: {}, mtemp: {}, cur: {}, pwr: {} }, tool: null };
 const ENV_SENSORS = { rt: {}, rh: {}, pm25: {} };
-const ENV_OVERRIDES = { ls: { rh: { nom: 59, wave: 7 } } }; // water line: humid afternoons push humidity over the limit
 /* slow wear for the demo story: value moves by `amount` over `days`, curved by `pow` */
 const DRIFTS = {
-  'm9-vib': { amount: 3.4, days: 7, pow: 1.6 },     // extruder gearbox bearing wear
-  'm6-oil': { amount: 10.5, days: 4, pow: 1.2 },    // injection oil cooler fouling
-  'm14-decay': { amount: 11, days: 6, pow: 1 },     // leak tester fixture seal wear
-  'm7-freq': { amount: -0.23, days: 7, pow: 1.3 },  // ultrasonic horn wear
+  'pg12-vib': { amount: 3.4, days: 7, pow: 1.6 },   // flywheel bearing wear
+  'pg46-oil': { amount: 10.5, days: 4, pow: 1.2 },  // lubrication oil cooler fouling
+  'pg33-hyd': { amount: 28, days: 6, pow: 1 },      // overload valve sticking, pressure creeping up
+  'pg78-mtemp': { amount: 24, days: 7, pow: 1.3 },  // main motor fan clogged
 };
 /* [PM fraction, tool fraction] used so some machines are due or overdue */
-const MAINT_STORY = { m13: [1.12, 0.5], m5: [0.55, 0.96], m4: [0.4, 1.05] };
+const MAINT_STORY = { pg20: [1.12, 0.5], pg5: [0.55, 0.96], pg64: [0.4, 1.05] };
 
 function machineKind(m) { return MACHINE_KINDS.find(k => k.re.test(m.name)) || GENERIC_KIND; }
 function makeSensors(asset, spec, over = {}) {
@@ -101,9 +91,9 @@ const Health = {
         const mt = maint[a.id] = seedMaint(a, now);
         maintLog.push({ id: uid('mx'), mid: a.id, at: mt.lastPM, kind: 'pm', note: 'Preventive maintenance as planned.', by: 'maint.tech' });
         if (mt.lastTool) maintLog.push({ id: uid('mx'), mid: a.id, at: mt.lastTool, kind: 'tool', note: `${mt.toolEvent}.`, by: 'maint.tech' });
-      } else if (/line/i.test(a.name)) sensors.push(...makeSensors(a, ENV_SENSORS, ENV_OVERRIDES[a.id]));
+      } else if (a.parentId) sensors.push(...makeSensors(a, ENV_SENSORS));
     });
-    maintLog.push({ id: uid('mx'), mid: 'm9', at: now - 2 * DAY - 3 * HOUR, kind: 'inspect', note: 'Gearbox noise reported by operator. Oil level OK. Watch vibration trend.', by: 'maint.tech' });
+    maintLog.push({ id: uid('mx'), mid: 'pg12', at: now - 2 * DAY - 3 * HOUR, kind: 'inspect', note: 'Flywheel noise reported by operator. Lubrication OK. Watch vibration trend.', by: 'maint.tech' });
     return { sensors, maint, maintLog };
   },
 
