@@ -45,9 +45,9 @@ const Mes = {
       { id: 'mesqc', name: 'MES QC inspector', parentId: 'mesqcp', menu: {}, assets: { p1: 'edit' } },
     ];
     const users = [
-      { id: 'u6', username: 'mes.planner', password: 'mes.planner', fullName: 'Kanokwan R.', email: 'kanokwan@kankyo-solutions.example', roleId: 'mespl', active: true },
-      { id: 'u7', username: 'mes.op', password: 'mes.op', fullName: 'Kittipong W.', email: 'kittipong@kankyo-solutions.example', roleId: 'mesopa', active: true },
-      { id: 'u9', username: 'mes.qc', password: 'mes.qc', fullName: 'Duangjai P.', email: 'duangjai@kankyo-solutions.example', roleId: 'mesqc', active: true },
+      { id: 'u6', username: 'mes.planner', password: 'mes.planner', fullName: 'Kanokwan R.', email: 'kanokwan@ntn-thailand.example', roleId: 'mespl', active: true },
+      { id: 'u7', username: 'mes.op', password: 'mes.op', fullName: 'Kittipong W.', email: 'kittipong@ntn-thailand.example', roleId: 'mesopa', active: true },
+      { id: 'u9', username: 'mes.qc', password: 'mes.qc', fullName: 'Duangjai P.', email: 'duangjai@ntn-thailand.example', roleId: 'mesqc', active: true },
     ];
     roles.forEach(r => { if (!c.roles.some(x => x.id === r.id)) c.roles.push({ ...st, ...r }); });
     users.forEach(u => { if (!c.users.some(x => x.username === u.username)) c.users.push({ ...st, ...u }); });

@@ -1,6 +1,6 @@
-# Kankyo IoT – Production Monitoring (OEE mock-up)
+# NTN IoT – Production Monitoring (OEE mock-up)
 
-Interactive mock-up of an OEE (Overall Equipment Effectiveness) monitoring web app for **Kankyo Solutions**, a plant with one machine group, **Groove Machine 1**: 70 press groove machines (No.1–No.80) placed on the Plant Layout as on the customer's floor drawing. Machine data is simulated in the browser and updates every second, so the app behaves like it is connected to real machines.
+Interactive mock-up of an OEE (Overall Equipment Effectiveness) monitoring web app for **NTN Manufacturing (Thailand) Co., Ltd.**, a plant with one machine group, **Groove Machine 1**: 70 press groove machines (No.1–No.80) placed on the Plant Layout as on the customer's floor drawing. Machine data is simulated in the browser and updates every second, so the app behaves like it is connected to real machines.
 
 Built with plain **HTML, CSS and JavaScript**. There is no framework, no build step and no backend.
 

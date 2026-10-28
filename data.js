@@ -9,7 +9,7 @@
 'use strict';
 
 const HOUR = 3600e3, DAY = 864e5, HISTORY_DAYS = 31;
-const STORE_KEY = 'oee-demo-config-v8';
+const STORE_KEY = 'oee-demo-config-v9';
 
 /* ---------- small utils ---------- */
 function mulberry32(a) {
@@ -39,7 +39,7 @@ function seedConfig() {
   const A = (id, name, code, parentId) => ({ id, name, code, parentId, isMachine: false });
   const M = (id, name, code, parentId, rate) => ({ id, name, code, parentId, isMachine: true, rate, uom: 'ea' });
   const assets = [
-    A('p1', 'Kankyo Solutions', '001', null),
+    A('p1', 'NTN Manufacturing (Thailand)', '001', null),
     A('gm1', 'Groove Machine 1', '001_1', 'p1'),
   ];
   // The press groove machines, all under Groove Machine 1. `pos` places each one on the Plant Layout floor plan
@@ -109,11 +109,11 @@ function seedConfig() {
     { id: 'mtn', name: 'Maintenance technician', parentId: 'mtp', menu: {}, assets: { p1: 'edit' } },
   ];
   const users = [
-    { id: 'u1', username: 'admin', password: 'admin', fullName: 'Super Admin', email: 'admin@kankyo-solutions.example', roleId: 'super', active: true },
-    { id: 'u2', username: 'manager', password: 'manager', fullName: 'Pimchanok S.', email: 'pimchanok@kankyo-solutions.example', roleId: 'mgr1', active: true },
-    { id: 'u3', username: 'operator', password: 'operator', fullName: 'Arthit K.', email: 'arthit@kankyo-solutions.example', roleId: 'opn', active: true },
-    { id: 'u5', username: 'maint.tech', password: 'maint.tech', fullName: 'Somchai T.', email: 'somchai@kankyo-solutions.example', roleId: 'mtn', active: true },
-    { id: 'u4', username: 'qc.lead', password: 'qc.lead', fullName: 'Narumon P.', email: 'narumon@kankyo-solutions.example', roleId: 'mgr1', active: false },
+    { id: 'u1', username: 'admin', password: 'admin', fullName: 'Super Admin', email: 'admin@ntn-thailand.example', roleId: 'super', active: true },
+    { id: 'u2', username: 'manager', password: 'manager', fullName: 'Pimchanok S.', email: 'pimchanok@ntn-thailand.example', roleId: 'mgr1', active: true },
+    { id: 'u3', username: 'operator', password: 'operator', fullName: 'Arthit K.', email: 'arthit@ntn-thailand.example', roleId: 'opn', active: true },
+    { id: 'u5', username: 'maint.tech', password: 'maint.tech', fullName: 'Somchai T.', email: 'somchai@ntn-thailand.example', roleId: 'mtn', active: true },
+    { id: 'u4', username: 'qc.lead', password: 'qc.lead', fullName: 'Narumon P.', email: 'narumon@ntn-thailand.example', roleId: 'mgr1', active: false },
   ];
   const week = {}; for (let d = 0; d < 7; d++) week[d] = [{ s: '00:00', e: '23:59' }];
   const plans = { p1: { week, overrides: {} } };
@@ -134,12 +134,12 @@ function seedConfig() {
     });
   }
   const alarmRules = [
-    { id: 'al1', name: 'Machine Breakdown', severity: 'critical', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r5'], qReasons: [], sendEmail: true, emails: ['maintenance@kankyo-solutions.example'], sendLine: true, lines: ['ln1'] },
+    { id: 'al1', name: 'Machine Breakdown', severity: 'critical', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r5'], qReasons: [], sendEmail: true, emails: ['maintenance@ntn-thailand.example'], sendLine: true, lines: ['ln1'] },
     { id: 'al2', name: 'Die change', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r4'], qReasons: [], sendEmail: false, emails: [], sendLine: true, lines: ['ln1'] },
     { id: 'al3', name: 'Work piece stuck', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r3'], qReasons: [], sendEmail: false, emails: [], sendLine: true, lines: ['ln1'] },
     { id: 'al4', name: 'MachineStop', severity: 'warning', type: 'machine', assetId: 'p1', aTarget: null, pTarget: null, qTarget: null, aReasons: ['r1', 'r2'], qReasons: [], sendEmail: false, emails: [], sendLine: false, lines: [] },
-    { id: 'al5', name: 'Burr / scratch', severity: 'critical', type: 'machine', assetId: 'gm1', aTarget: null, pTarget: null, qTarget: null, aReasons: [], qReasons: ['q4'], sendEmail: true, emails: ['qc@kankyo-solutions.example'], sendLine: false, lines: [] },
-    { id: 'al6', name: 'Groove Machine 1 OEE below target', severity: 'warning', type: 'machine', assetId: 'gm1', aTarget: 85, pTarget: 85, qTarget: 90, aReasons: [], qReasons: [], sendEmail: true, emails: ['plant.manager@kankyo-solutions.example'], sendLine: false, lines: [] },
+    { id: 'al5', name: 'Burr / scratch', severity: 'critical', type: 'machine', assetId: 'gm1', aTarget: null, pTarget: null, qTarget: null, aReasons: [], qReasons: ['q4'], sendEmail: true, emails: ['qc@ntn-thailand.example'], sendLine: false, lines: [] },
+    { id: 'al6', name: 'Groove Machine 1 OEE below target', severity: 'warning', type: 'machine', assetId: 'gm1', aTarget: 85, pTarget: 85, qTarget: 90, aReasons: [], qReasons: [], sendEmail: true, emails: ['plant.manager@ntn-thailand.example'], sendLine: false, lines: [] },
   ];
   const banners = [
     { id: 'b1', fileName: 'superapp-iot-smart-factory.jpg', hue: 214 },
