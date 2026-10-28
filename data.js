@@ -9,7 +9,7 @@
 'use strict';
 
 const HOUR = 3600e3, DAY = 864e5, HISTORY_DAYS = 31;
-const STORE_KEY = 'oee-demo-config-v9';
+const STORE_KEY = 'oee-demo-config-v10';
 
 /* ---------- small utils ---------- */
 function mulberry32(a) {
@@ -115,7 +115,8 @@ function seedConfig() {
     { id: 'u5', username: 'maint.tech', password: 'maint.tech', fullName: 'Somchai T.', email: 'somchai@ntn-thailand.example', roleId: 'mtn', active: true },
     { id: 'u4', username: 'qc.lead', password: 'qc.lead', fullName: 'Narumon P.', email: 'narumon@ntn-thailand.example', roleId: 'mgr1', active: false },
   ];
-  const week = {}; for (let d = 0; d < 7; d++) week[d] = [{ s: '00:00', e: '23:59' }];
+  // one shift, 08:00–17:00 with a lunch break at 12:00–13:00
+  const week = {}; for (let d = 0; d < 7; d++) week[d] = [{ s: '08:00', e: '12:00' }, { s: '13:00', e: '17:00' }];
   const plans = { p1: { week, overrides: {} } };
 
   const jobs = [];
@@ -126,9 +127,9 @@ function seedConfig() {
     const tag = `${String(dt.getFullYear()).slice(2)}${pad(dt.getMonth() + 1)}${pad(dt.getDate())}`;
     assets.filter(a => a.isMachine).forEach((m, i) => {
       jobs.push({
-        id: `j${tag}${m.id}`, name: `PO-${tag}-${pad(i + 1)}`, target: m.rate * 16, formula: `Groove No.${m.no} std`,
+        id: `j${tag}${m.id}`, name: `PO-${tag}-${pad(i + 1)}`, target: m.rate * 8, formula: `Groove No.${m.no} std`,
         idealQty: m.rate, idealPer: 1, idealUnit: 'hour', machines: [m.id], finishGood: m.id, priority: i % 4 === 0 ? 'high' : 'normal',
-        type: 'auto', start: day + 6 * HOUR, end: day + 22 * HOUR, cavity: 1,
+        type: 'auto', start: day + 8 * HOUR, end: day + 17 * HOUR, cavity: 1,
         createdBy: 'admin', createdAt: day - 2 * DAY, updatedBy: 'admin', updatedAt: day - 2 * DAY,
       });
     });

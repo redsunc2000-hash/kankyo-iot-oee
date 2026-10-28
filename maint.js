@@ -17,12 +17,11 @@ const CHECK_KIND = {
 };
 const checkItems = mid => [...CHECK_COMMON, ...(CHECK_KIND[machineKind(DB.asset(mid)).kind] || [])];
 
-/* Day 08:00–20:00, Night 20:00–08:00 */
+/* one shift a day, 08:00–17:00; before 08:00 the latest shift is yesterday's */
 function shiftAt(t) {
-  const sod = startOfDay(t), h = new Date(t).getHours();
-  const day = h >= 8 && h < 20;
-  const start = day ? sod + 8 * HOUR : h >= 20 ? sod + 20 * HOUR : sod - 4 * HOUR;
-  return { key: `${fmtDate(start)}-${day ? 'D' : 'N'}`, name: day ? 'Day' : 'Night', start, end: start + 12 * HOUR };
+  const sod = startOfDay(t);
+  const start = new Date(t).getHours() < 8 ? sod - DAY + 8 * HOUR : sod + 8 * HOUR;
+  return { key: `${fmtDate(start)}-D`, name: 'Day', start, end: start + 9 * HOUR };
 }
 const shiftLabel = sh => `${sh.name} shift · ${fmtDate(sh.start)} ${fmtTime(sh.start, false)}–${fmtTime(sh.end, false)}`;
 function shiftByKey(key) { const [y, m, d, k] = key.split('-'); const sod = new Date(+y, +m - 1, +d).getTime(); return shiftAt(sod + (k === 'D' ? 9 : 21) * HOUR); }
@@ -68,7 +67,7 @@ const Maint = {
     const checks = [];
     const machines = assets.filter(a => a.isMachine);
     const ng = { pg12: ['No abnormal noise, smell or vibration', 'Flywheel louder than last week.'], pg74: ['Groove die clean, no chips or cracks', 'Small chip on the die edge.'] };
-    const prev = shiftAt(now - 12 * HOUR), cur = shiftAt(now);
+    const cur = shiftAt(now), prev = shiftAt(cur.start - DAY);
     machines.forEach((m, i) => {
       const mk = (sh, at) => ({ id: uid('ck'), mid: m.id, shift: sh.key, at, by: i % 2 ? 'qc.lead' : 'operator', items: [...CHECK_COMMON, ...(CHECK_KIND[machineKind(m).kind] || [])].map(text => ({ text, ok: !(ng[m.id] && ng[m.id][0] === text) })), note: ng[m.id]?.[1] || '' });
       checks.push(mk(prev, prev.start + (20 + i * 4) * MIN));
@@ -80,7 +79,7 @@ const Maint = {
       ['MB2007-00142-01 (No.7) stopped twice for work piece stuck in the die, cleared by operator.', ''],
       ['MB2013-00157-02 (No.74) stroke counter missed counts. Proximity sensor replaced.', 'Check counter against strokes at start of shift.'],
     ];
-    const handovers = notes.map(([note, issues], k) => { const sh = shiftAt(now - 12 * HOUR * (k + 1)); return { id: uid('ho'), shift: sh.key, at: sh.end - 12 * MIN, by: k % 2 ? 'qc.lead' : 'manager', scopeId: 'p1', note, issues }; });
+    const handovers = notes.map(([note, issues], k) => { const sh = shiftAt(now - DAY * (k + 1)); return { id: uid('ho'), shift: sh.key, at: sh.end - 12 * MIN, by: k % 2 ? 'qc.lead' : 'manager', scopeId: 'p1', note, issues }; });
     return { parts, workOrders, checks, handovers, tariff: { on: 4.18, off: 2.6, ef: 0.5 } };
   },
 

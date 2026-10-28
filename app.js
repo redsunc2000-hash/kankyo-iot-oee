@@ -793,8 +793,8 @@ function maintForm(mid) {
 
 function pDaily() {
   const now = Date.now(); const rows = [];
-  for (let d = startOfDay(now); d >= Sim.start; d -= DAY) { const created = d + 20 * HOUR; if (created <= now) rows.push({ id: 'd' + d, d, created: created + 3000 }); }
-  return head('Daily Report', '', 'Reports are generated every day at 20:00 for the selected scope.') +
+  for (let d = startOfDay(now); d >= Sim.start; d -= DAY) { const created = d + 17 * HOUR; if (created <= now) rows.push({ id: 'd' + d, d, created: created + 3000 }); }
+  return head('Daily Report', '', 'Reports are generated every day at 17:00, at the end of the shift, for the selected scope.') +
     `<div class="card">${table('daily', [{ h: 'Date', f: r => `<span class="mono">${fmtDate(r.d)}</span>` }, { h: 'Created Date', f: r => `<span class="mono">${fmtDT(r.created)}</span>` },
       { h: 'Actions', cls: 'num', f: r => `<div class="acts"><button class="btn sm" data-act="report" data-arg="${r.d}" data-kind="full">${ic('print')}Print Report</button><button class="btn sm" data-act="report" data-arg="${r.d}" data-kind="one">${ic('report')}One Page Report</button></div>` }], rows)}</div>`;
 }
@@ -1052,7 +1052,7 @@ function importDialog(kind) {
   const spec = {
     assets: { title: 'Import Asset', head: ['Name', 'Asset Code', 'Parent Code', 'Is Machine', 'Ideal rate (pcs/h)'], sample: [['Station 11', '001_1_1_2_4_m', '001_1_1_2', 'Y', '220']] },
     reasons: { title: 'Import Reason', head: ['Reason Name', 'Reason Code', 'Section', 'Status', 'Repair'], sample: [['Material shortage', 'MS01', 'availability', 'warning', 'N']] },
-    jobs: { title: 'Import Job', head: ['Job Name', 'Machine Code', 'Target', 'Formula Name', 'Ideal qty per hour', 'Start', 'End', 'Type'], sample: [['PO-EXTRA-01', '001_2_1_m', '2880', 'Final Assembly std', '180', fmtDT(startOfDay(Date.now()) + DAY + 6 * HOUR), fmtDT(startOfDay(Date.now()) + DAY + 22 * HOUR), 'auto']] },
+    jobs: { title: 'Import Job', head: ['Job Name', 'Machine Code', 'Target', 'Formula Name', 'Ideal qty per hour', 'Start', 'End', 'Type'], sample: [['PO-EXTRA-01', '001_2_1_m', '2880', 'Final Assembly std', '180', fmtDT(startOfDay(Date.now()) + DAY + 8 * HOUR), fmtDT(startOfDay(Date.now()) + DAY + 17 * HOUR), 'auto']] },
   }[kind];
   openModal({
     title: spec.title, wide: true,
@@ -1286,7 +1286,7 @@ function jobForm(j) {
       row('Finish Good Machine', `<select class="input" id="fj-fg">${ms.map(m => `<option value="${m.id}" ${j?.finishGood === m.id ? 'selected' : ''}>${esc(m.name)}</option>`).join('')}</select>`, 'fj-fg') +
       row('Priority', `<select class="input" id="fj-pr">${['high', 'normal', 'low'].map(p => `<option ${(j?.priority || 'normal') === p ? 'selected' : ''}>${p}</option>`).join('')}</select>`, '', true) +
       row('Type', `<div class="radio-group"><label><input type="radio" name="fj-type" value="auto" ${(j?.type || 'auto') === 'auto' ? 'checked' : ''}>auto</label><label><input type="radio" name="fj-type" value="manual" ${j?.type === 'manual' ? 'checked' : ''}>manual</label></div>`) +
-      row('Job Schedule', `<div class="inline"><input class="input" type="datetime-local" id="fj-s" value="${toLocalInput(j?.start ?? startOfDay(Date.now()) + DAY + 6 * HOUR)}" style="width:auto" aria-label="Start"><span>→</span><input class="input" type="datetime-local" id="fj-e" value="${toLocalInput(j?.end ?? startOfDay(Date.now()) + DAY + 22 * HOUR)}" style="width:auto" aria-label="End"></div>`, 'fj-s', true) +
+      row('Job Schedule', `<div class="inline"><input class="input" type="datetime-local" id="fj-s" value="${toLocalInput(j?.start ?? startOfDay(Date.now()) + DAY + 8 * HOUR)}" style="width:auto" aria-label="Start"><span>→</span><input class="input" type="datetime-local" id="fj-e" value="${toLocalInput(j?.end ?? startOfDay(Date.now()) + DAY + 17 * HOUR)}" style="width:auto" aria-label="End"></div>`, 'fj-s', true) +
       row('Cavity', `<input class="input" type="number" min="1" id="fj-cav" value="${j?.cavity ?? 1}" style="width:110px">`, 'fj-cav') +
       row('Product Picture', `<input class="input" type="file" accept="image/*" id="fj-pic">`) +
       `<p style="margin:0;font-size:12px;color:var(--muted)">auto starts the job at its scheduled time. manual waits for an operator to start it. Cavity is the number of pieces each machine signal stands for.</p>`,
